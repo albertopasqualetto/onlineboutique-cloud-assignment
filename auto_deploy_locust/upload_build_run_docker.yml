@@ -1,0 +1,35 @@
+# deploy_container.yml
+- name: Build and Deploy Docker Container
+  hosts: all
+  become: true
+  vars:
+    docker_image_name: "loadgenerator"
+    docker_container_name: "my-loadgenerator"
+    docker_image_tag: "latest"
+    dockerfile_path: "loadgenerator"  # Update to the path where your Dockerfile is located
+  tasks:
+    - name: Copy application files to the VM
+      copy:
+        src: loadgenerator
+        dest: .
+        remote_src: no
+
+    - name: Build Docker image
+      docker_image:
+        name: "{{ docker_image_name }}"
+        source: "build"
+        build:
+          path: "{{ dockerfile_path }}"
+        tag: "{{ docker_image_tag }}"
+    
+    - name: Run Docker container
+      docker_container:
+        name: "{{ docker_container_name }}"
+        image: "{{ docker_image_name }}:{{ docker_image_tag }}"
+        state: started
+        ports:
+          - "8089:8089"
+        env:
+          FRONTEND_ADDR: "34.56.250.44"
+          USERS: "10"
+          # TODO use env file?
