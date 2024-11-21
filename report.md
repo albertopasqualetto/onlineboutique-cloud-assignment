@@ -21,3 +21,7 @@ gia fatto
 We build the image of the load generator ***microservices-demo/src/loadgenerator/Dockerfile*** using the command ***docker buildx build path/to/Dockerfile parent***. Then We run the container with ***docker run -e FRONTEND_ADDR=[ADDRESS] -e USERS=10 [IMAGE ID]*** and we analyzed the output and we understood that it was accesible outside.
 
 ## Deploying automatically the load generator in Google Cloud
+
+- We took from "Running MPI applications" the Terraform-related files (`simple_deployment.tf`, `variables.tf`, `parse-tf-state.py`, `setup.sh`) and we modified them to run an image with docker engine installed (`boot_disk.initialize_params.image="cos-cloud/cos-117-lts"`) within our GCP project.
+- We created the ansible ? `upload_build_run_docker.yml` to upload the Locust loadgenerator Dockerfile to the GCP project, build and run it. # TODO .env?
+

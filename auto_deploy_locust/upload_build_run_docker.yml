@@ -21,7 +21,7 @@
         build:
           path: "{{ dockerfile_path }}"
         tag: "{{ docker_image_tag }}"
-    
+
     - name: Run Docker container
       docker_container:
         name: "{{ docker_container_name }}"
