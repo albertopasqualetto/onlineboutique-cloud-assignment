@@ -1,0 +1,4 @@
+project = "project-id"
+region = "region"
+zone = "region-zone"
+deployKeyName = "path/to/deploy-key.json"

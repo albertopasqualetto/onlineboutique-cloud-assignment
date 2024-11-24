@@ -12,15 +12,15 @@ variable "zone" {
 variable "deployKeyName" {
 }
 
-variable "machineCount" {
-  default = 1
+variable "nodeCount" {
+  default = 4
 }
 
 variable "machineType" {
-  default = "f1-micro"
+  default = "e2-standard-2"
 }
 
-variable "instanceName" {
-  default = "locust"
+variable "clusterName" {
+  default = "onlineboutique"
 }
 

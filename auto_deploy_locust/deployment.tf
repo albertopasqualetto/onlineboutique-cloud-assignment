@@ -1,18 +1,11 @@
-
 provider "google" {
   credentials = file(var.deployKeyName)
   project     = var.project
   region      = var.region
-  zone        = var.zone
 }
 
 
-
 resource "google_compute_instance" "vm_instance" {
-
-  ## for a setup having multiple instances of the same type, you can do
-  ## the following, there would be 2 instances of the same configuration
-  ## provisioned
   count        = var.machineCount
   name         = "${var.instanceName}-${count.index}"
 
@@ -31,6 +24,7 @@ resource "google_compute_instance" "vm_instance" {
     }
   }
 }
+
 
 // A variable for extracting the external ip of the instance
 output "ip" {

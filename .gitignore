@@ -1,5 +1,7 @@
 hosts
 terraform.tfstate*
-*lock*
+terraform.tfvars
 .terraform/
+*lock*
+*.key.json
 buffer/
