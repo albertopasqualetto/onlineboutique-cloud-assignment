@@ -73,12 +73,11 @@ spec:
   type: ClusterIP
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: node-exporter
   namespace: monitoring
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: node-exporter
@@ -89,7 +88,7 @@ spec:
     spec:
       containers:
         - name: node-exporter
-          image: prom/node-exporter:v1.6.1
+          image: prom/node-exporter
           ports:
             - containerPort: 9100
 ---
@@ -107,7 +106,7 @@ spec:
     app: node-exporter
   type: ClusterIP
 ---
-apiVersion: apps/v1 # for Kubernetes versions before 1.9.0 use apps/v1beta2
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: cadvisor

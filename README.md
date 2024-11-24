@@ -15,6 +15,9 @@
 3. `terraform init` and `terraform apply`
 4. Update conguration with `kubectl apply -k .`
 
+> [!IMPORTANT] 
+> Don't forget get the credentials with `gcloud container clusters get-credentials onlineboutique`
+
 ## Steps
 
 ### Mandatory base steps
