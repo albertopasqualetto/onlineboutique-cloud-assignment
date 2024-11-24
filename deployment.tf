@@ -30,7 +30,10 @@ provider "kubernetes" {
 
 resource "null_resource" "apply_kustomization" {
   provisioner "local-exec" {
-    command = "kubectl apply -k ."
+    command = <<EOT
+      gcloud container clusters get-credentials ${var.clusterName} --region ${var.region} --project ${var.project}
+      kubectl apply -k .
+    EOT
   }
 
   depends_on = [google_container_cluster.primary]
