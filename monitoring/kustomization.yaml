@@ -3,9 +3,12 @@ kind: Component
 resources:
 - prometheus.yaml
 - grafana.yaml
-# - grafana-config.yaml
 configMapGenerator:
 - name: prometheus-config
   namespace: monitoring
   files:
   - prometheus-config.yml
+- name: grafana-datasources
+  namespace: monitoring
+  files:
+  - grafana-prometheus-datasource.yml
