@@ -17,9 +17,9 @@ resource "google_container_cluster" "primary" {
 }
 
 
-resource "null_resource" "apply_kustomization" {
-  provisioner "local-exec" {
-    command = "gcloud container clusters get-credentials ${var.clusterName} --zone ${var.zone} --project ${var.project} && kubectl apply -k ."
-  }
-  depends_on = [google_container_cluster.primary]
-}
+# resource "null_resource" "apply_kustomization" {
+#   provisioner "local-exec" {
+#     command = "gcloud container clusters get-credentials ${var.clusterName} --zone ${var.zone} --project ${var.project} && kubectl apply -k ."
+#   }
+#   depends_on = [google_container_cluster.primary]
+# }
