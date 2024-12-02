@@ -12,3 +12,10 @@ configMapGenerator:
   namespace: monitoring
   files:
   - grafana-prometheus-datasource.yml
+- name: grafana-dashboards
+  namespace: monitoring
+  files:
+  - grafana-dashboard-provider.yaml
+  - grafana-dashboard.json
+# TODO remove disk space viz from dashboard because of stateless?
+# TODO check why with some time spans, the graph is not displayed in Grafana
