@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+#resources:
+#- frontend-destinationrule.yaml
+#- frontend-virtualservice.yaml
+#- ../microservices-demo/kubernetes-manifests/frontend.yaml
+
+#patches:
+#  - path: patch-frontendV2.yaml  # File che viene aggiunto al frontend.yaml
+#    target:
+#    kind: Deployment
+
+# resources:
+#   - frontend.yaml
+
+patches:
+  - path: frontend-destinationrule.yaml
+    target:
+      kind: DestinationRule
+      name: frontend
+  - path: frontend-virtualservice.yaml
+    target:
+      kind: VirtualService
+      name: frontend
+
+
+
+

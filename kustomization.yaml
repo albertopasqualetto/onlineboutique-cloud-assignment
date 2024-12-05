@@ -3,4 +3,6 @@ kind: Kustomization
 resources:
 - microservices-demo/kustomize/base
 components:
-- monitoring
+# - monitoring
+- canary-version
+
