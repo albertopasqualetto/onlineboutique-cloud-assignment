@@ -1,7 +1,7 @@
 from locust import HttpUser, task, between
 
 class FrontendUser(HttpUser):
-    host = "http://<your-frontend-ip-or-domain>"
+    host = "http://34.31.90.54"
     # Tempo di attesa tra ogni task (simulazione di utenti)
     wait_time = between(1, 5)  # 1-5 secondi di attesa tra le richieste
     
@@ -15,4 +15,4 @@ class FrontendUser(HttpUser):
     @task(2)
     def product_page(self):
         # Simula la navigazione sulla pagina di un prodotto
-        self.client.get("/product/1")
+        self.client.get("/product/OLJCESPC7Z")
