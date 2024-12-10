@@ -17,5 +17,7 @@ configMapGenerator:
   files:
   - grafana-dashboard-provider.yaml
   - grafana-dashboard.json
+patches:
+  - path: redis-exporter.patch.yaml
 # TODO remove disk space viz from dashboard because of stateless?
 # TODO check why with some time spans, the graph is not displayed in Grafana

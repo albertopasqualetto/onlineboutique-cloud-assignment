@@ -274,6 +274,12 @@ scrape_configs:
     action: replace
   scrape_interval: 5m
   scrape_timeout: 30s
+
+- job_name: redis_exporter
+  static_configs:
+  - targets: ['redis-exporter.default.svc.cluster.local:9121']
+
+
 # alerting:
 #   alertmanagers:
 #   - kubernetes_sd_configs:
