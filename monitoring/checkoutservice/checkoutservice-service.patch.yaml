@@ -1,0 +1,6 @@
+- op: add
+  path: /spec/ports/-
+  value:
+    name: prom-http
+    port: 9090
+    targetPort: 9090

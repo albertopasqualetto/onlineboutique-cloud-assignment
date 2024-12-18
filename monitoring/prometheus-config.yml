@@ -279,6 +279,10 @@ scrape_configs:
   static_configs:
   - targets: ['redis-exporter.default.svc.cluster.local:9121']
 
+- job_name: grpc_checkoutservice
+  static_configs:
+  - targets: ['checkoutservice.default.svc.cluster.local:9090']
+
 
 # alerting:
 #   alertmanagers:
