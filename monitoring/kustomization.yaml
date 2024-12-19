@@ -30,8 +30,20 @@ patches:
       version: v1
       kind: Service
       name: checkoutservice
+  - path: productcatalogservice/productcatalogservice-container.patch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: productcatalogservice
+  - path: productcatalogservice/productcatalogservice-service.patch.yaml
+    target:
+      version: v1
+      kind: Service
+      name: productcatalogservice
 
 # TODO remove disk space viz from dashboard because of stateless?
 # TODO check why with some time spans, the graph is not displayed in Grafana
 # TODO shipping service is the only one with otel stats export, but not implemented
-# TODO ordini eseguiti: grpc_server_handled_total{instance=~"checkoutservice.*",grpc_method="PlaceOrder"}
+# TODO fix style of auto_deploy_locust
+# TODO implement used currencies->accessing countries with a custom exporter in currency service?

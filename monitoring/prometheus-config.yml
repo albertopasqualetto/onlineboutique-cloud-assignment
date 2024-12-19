@@ -283,6 +283,10 @@ scrape_configs:
   static_configs:
   - targets: ['checkoutservice.default.svc.cluster.local:9090']
 
+- job_name: productcatalogservice
+  static_configs:
+  - targets: ['productcatalogservice.default.svc.cluster.local:9090']
+
 
 # alerting:
 #   alertmanagers:

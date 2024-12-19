@@ -1,0 +1,73 @@
+diff --git a/product_catalog.go b/product_catalog.go
+index e70e0cb0..4736ff9b 100644
+--- a/product_catalog.go
++++ b/product_catalog.go
+@@ -23,6 +23,19 @@ import (
+ 	"google.golang.org/grpc/codes"
+ 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+ 	"google.golang.org/grpc/status"
++
++	"github.com/prometheus/client_golang/prometheus"
++	"github.com/prometheus/client_golang/prometheus/promauto"
++)
++
++var (
++	productRetrievalCounter = promauto.NewCounterVec(
++			prometheus.CounterOpts{
++					Name: "product_retrieval_count",
++					Help: "Counter of retrieved products by ID",
++			},
++			[]string{"product_id", "product_name"},
++		)
+ )
+
+ type productCatalog struct {
+@@ -57,6 +70,9 @@ func (p *productCatalog) GetProduct(ctx context.Context, req *pb.GetProductReque
+ 	if found == nil {
+ 		return nil, status.Errorf(codes.NotFound, "no product with ID %s", req.Id)
+ 	}
++
++	productRetrievalCounter.WithLabelValues(found.Id, found.Name).Inc()
++
+ 	return found, nil
+ }
+
+
+ diff --git a/server.go b/server.go
+index a8e84c45..654aec52 100644
+--- a/server.go
++++ b/server.go
+@@ -38,6 +38,9 @@ import (
+ 	"go.opentelemetry.io/otel/propagation"
+ 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+ 	"google.golang.org/grpc"
++
++	"net/http"
++	"github.com/prometheus/client_golang/prometheus/promhttp"
+ )
+
+ var (
+@@ -47,6 +50,8 @@ var (
+
+ 	port = "3550"
+
++	promHttpAddr = ":9090"
++
+ 	reloadCatalog bool
+ )
+
+@@ -125,6 +130,14 @@ func run(port string) string {
+ 		log.Fatal(err)
+ 	}
+
++	http.Handle("/metrics", promhttp.Handler())
++	go func() {
++		log.Info("Starting Prometheus metrics server on " + promHttpAddr)
++		if err := http.ListenAndServe(promHttpAddr, nil); err != nil {
++			log.Fatalf("Error starting Prometheus metrics server: %v", err)
++		}
++	}()
++
+ 	// Propagate trace context
+ 	otel.SetTextMapPropagator(
+ 		propagation.NewCompositeTextMapPropagator(
