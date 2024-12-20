@@ -172,10 +172,22 @@
               "options": {
                 "match": "null",
                 "result": {
+                  "index": 0,
                   "text": "N/A"
                 }
               },
               "type": "special"
+            },
+            {
+              "options": {
+                "from": -100,
+                "result": {
+                  "index": 1,
+                  "text": "0%"
+                },
+                "to": 0
+              },
+              "type": "range"
             }
           ],
           "max": 100,
@@ -3318,6 +3330,6 @@
   "timezone": "browser",
   "title": "OBA Dashboard",
   "uid": "obadashboard",
-  "version": 5,
+  "version": 1,
   "weekStart": ""
 }
