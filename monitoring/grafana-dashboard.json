@@ -1139,7 +1139,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "avg(100 - ((node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"rootfs\"} * 100) / node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\"})) by (instance)",
+              "expr": "avg(100 - ((node_filesystem_avail_bytes{fstype!~\"root.*\",fstype!~\"tmp.*\",mountpoint!~\"/tmp.*\",mountpoint=~\"/|/data\"} / node_filesystem_size_bytes{fstype!~\"root.*\",fstype!~\"tmp.*\",mountpoint!~\"/tmp.*\",mountpoint=~\"/|/data\"}) * 100)) by (instance)",
               "hide": false,
               "instant": false,
               "legendFormat": "__auto",

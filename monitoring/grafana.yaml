@@ -67,6 +67,8 @@ spec:
               name: grafana-datasources
             - mountPath: /etc/grafana/provisioning/dashboards
               name: grafana-dashboards
+            - mountPath: /etc/grafana/provisioning/alerting
+              name: grafana-alerting
       volumes:
         - name: grafana-pv
           persistentVolumeClaim:
@@ -77,6 +79,9 @@ spec:
         - name: grafana-dashboards
           configMap:
             name: grafana-dashboards
+        - name: grafana-alerting
+          configMap:
+            name: grafana-alerting
 ---
 apiVersion: v1
 kind: Service

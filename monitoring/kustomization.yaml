@@ -17,6 +17,10 @@ configMapGenerator:
   files:
   - grafana-dashboard-provider.yaml
   - grafana-dashboard.json
+- name: grafana-alerting
+  namespace: monitoring
+  files:
+  - grafana-alerting.yml
 patches:
   - path: redis-exporter.patch.yaml
   - path: checkoutservice/checkoutservice-container.patch.yaml
@@ -47,3 +51,7 @@ patches:
 # TODO shipping service is the only one with otel stats export, but not implemented
 # TODO fix style of auto_deploy_locust
 # TODO implement used currencies->accessing countries with a custom exporter in currency service?
+# TODO check if container_fs_writes_bytes_total still works
+# TODO add redis dashboard
+# TODO show with respect to limits?  sum(container_memory_working_set_byte) by {container_name} / sum(label_join{kube_pod_container_resource_limits_memory_bytes, "container_name", "","container"}) by (container_name)
+# TODO avg or sum?
