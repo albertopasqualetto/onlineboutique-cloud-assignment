@@ -18,7 +18,7 @@ gia fatto
 
 ## Deploying the load generator on a local machine
 
-We build the image of the load generator ***microservices-demo/src/loadgenerator/Dockerfile*** using the command ***docker buildx build path/to/Dockerfile parent***. Then We run the container with ***docker run -e FRONTEND_ADDR=[ADDRESS] -e USERS=10 [IMAGE ID]*** and we analyzed the output and we understood that it was accesible outside.
+We build the image of the load generator ***microservices-demo/src/loadgenerator/Dockerfile*** using the command ***docker buildx build path/to/Dockerfile parent***. Then we ran the container with ***docker run -e FRONTEND_ADDR=[ADDRESS] -e USERS=10 [IMAGE ID]*** and we analyzed the output and we understood that it was accesible outside.
 
 ## Deploying automatically the load generator in Google Cloud
 
@@ -26,3 +26,7 @@ We build the image of the load generator ***microservices-demo/src/loadgenerator
 - We created the ansible ? `upload_build_run_docker.yml` to upload the Locust loadgenerator Dockerfile to the GCP project, build and run it. # TODO .env?
 
 # TODO change loadgenerator folder
+
+# TODO using kustomize
+
+# TODO test new automated deployment.tf

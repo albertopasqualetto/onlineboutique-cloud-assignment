@@ -14,11 +14,11 @@
 
 # https://github.com/GoogleCloudPlatform/microservices-demo
 
-# modified from the original to add new v2 endpoint
+# modified from the original to add new v3 endpoint to frontend
 
 FROM golang:1.23.2-alpine@sha256:9dd2625a1ff2859b8d8b01d8f7822c0f528942fe56cfe7a1e7c38d3b8d72d679 AS builder
 
-# Download frontend source code
+# Download source code
 RUN apk add --no-cache git
 RUN git clone --depth 1 --branch v0 https://github.com/GoogleCloudPlatform/microservices-demo.git
 RUN mv microservices-demo/src/frontend /src
@@ -32,6 +32,10 @@ RUN go mod download
 
 # version v2
 RUN sed -i '/r := mux.NewRouter()/a\\tr.HandleFunc(baseUrl + "/v2.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "THIS IS VERSION v2") })' main.go
+
+# version v3
+RUN sed -i '/r := mux.NewRouter()/a\\tr.HandleFunc(baseUrl + "/v3.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "THIS IS VERSION v3") })' main.go
+RUN sed -i '/r := mux.NewRouter()/a\\tr.Use(func(next http.Handler) http.Handler { return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { time.Sleep(3 * time.Second); next.ServeHTTP(w, r) }) })' main.go
 
 # Skaffold passes in debug-oriented compiler flags
 ARG SKAFFOLD_GO_GCFLAGS

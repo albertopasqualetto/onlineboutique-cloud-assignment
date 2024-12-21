@@ -24,3 +24,7 @@ variable "clusterName" {
   default = "onlineboutique"
 }
 
+variable "filepath_manifest" {
+  description = "Path to folder where resides the main kustomization.yaml file"
+  default     = "."
+}
