@@ -5,6 +5,7 @@
 Monitoring the application and the infrastructure is crucial to understand the behavior of the system and to detect possible issues.
 
 - Everything in monitoring folder
+- Drove the usage of kustomize
 - without Helm
 - Prometheus
   - ClusterRole for seeing metrics from pods!! (problem no documentation)
@@ -27,6 +28,8 @@ Monitoring the application and the infrastructure is crucial to understand the b
       - 1860 node-exporter
       - 13946 cAdvisor
       - 763 redis
+    - some **PromQL** queries does not work with all ranges
+    - colors etc
   - admin:admin
 
 ## Bonus part
@@ -44,6 +47,7 @@ One could collect more specific metrics...
   - metrics extracted from checkoutservice (as example) Server
   - added using patches (explain patches)
   - built new image `albertopasqualetto/checkoutservice:monitoring`
+  - we are new to golang
   - in `github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus` also Client metrics available
   - Then used for an example to get Placed Orders
   - need to start a server to expose metrics, used `github.com/prometheus/client_golang/prometheus/promhttp`
