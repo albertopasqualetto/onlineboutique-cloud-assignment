@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
 - prometheus.yaml
+- prometheus-infrastructure-metrics.yaml
 - grafana.yaml
 configMapGenerator:
 - name: prometheus-config
@@ -15,7 +16,7 @@ configMapGenerator:
 - name: grafana-dashboards
   namespace: monitoring
   files:
-  - grafana-dashboard-provider.yaml
+  - grafana-dashboard-provider.yml
   - grafana-dashboard.json
 - name: grafana-alerting
   namespace: monitoring

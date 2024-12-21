@@ -1,3 +1,5 @@
+# This is a Grafana dashboard provider configuration file. It is not a Kubernetes .yaml file.
+
 apiVersion: 1
 providers:
   # <string> an unique provider name. Required

@@ -1,3 +1,5 @@
+# This is a Grafana datasource configuration file. It is not a Kubernetes .yaml file.
+
 apiVersion: 1
 
 datasources:
