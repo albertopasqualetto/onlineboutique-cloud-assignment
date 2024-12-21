@@ -44,6 +44,7 @@ One could collect more specific metrics...
   - added to the cart pod using a patch `redis-exporter.patch.yaml`
   - Screenshot of dashboard
 - gRPC
+  - tried otel but not really implemented in the existent code
   - metrics extracted from checkoutservice (as example) Server
   - added using patches (explain patches)
   - built new image `albertopasqualetto/checkoutservice:monitoring`
