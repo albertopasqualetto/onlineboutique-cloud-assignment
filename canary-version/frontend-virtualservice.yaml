@@ -2,24 +2,19 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: frontend
+  namespace: default
 spec:
   hosts:
-  - frontend
+  - "*"  # Accetta traffico da tutti i domini
+  gateways:
+  - frontend-gateway
   http:
   - route:
     - destination:
         host: frontend
         subset: v1
       weight: 75
-      headers:
-        request:
-          add:
-            x-version: "v1" 
     - destination:
         host: frontend
         subset: v2
       weight: 25
-      headers:
-        request:
-          add:
-            x-version: "v2" 

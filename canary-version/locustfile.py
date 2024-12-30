@@ -1,7 +1,7 @@
 from locust import HttpUser, task, between
 
 class FrontendUser(HttpUser):
-    host = "http://34.31.90.54"
+    host = "http://34.27.165.38"
     # Tempo di attesa tra ogni task (simulazione di utenti)
     wait_time = between(1, 5)  # 1-5 secondi di attesa tra le richieste
     
