@@ -47,10 +47,8 @@ patches:
       kind: Service
       name: productcatalogservice
 
-# TODO remove disk space viz from dashboard because of stateless?
-# TODO check why with some time spans, the graph is not displayed in Grafana
+# TODO check why with some time spans, the graph is not displayed in Grafana (SKIP)
 # TODO shipping service is the only one with otel stats export, but not implemented
-# TODO fix style of auto_deploy_locust
 # TODO implement used currencies->accessing countries with a custom exporter in currency service?
 # TODO check if container_fs_writes_bytes_total still works
 # TODO add redis dashboard

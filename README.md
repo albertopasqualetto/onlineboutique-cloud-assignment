@@ -29,13 +29,13 @@
 
 ### Mandatory advanced steps
 
-- [ ] A | Monitoring the application and the infrastructure
+- [x] A | Monitoring the application and the infrastructure
 - [ ] Next | Performance evaluation
 - [ ] M | Canary releases
 
 ### Bonus steps
 
-- [ ] A | Monitoring the application and the infrastructure [Bonus]
+- [x] A | Monitoring the application and the infrastructure [Bonus]
 - [ ] Next | Performance evaluation [Bonus]
 - [ ] Next | Autoscaling [Bonus]
 - [ ] Next | Optimizing the cost of your deployment [Bonus]

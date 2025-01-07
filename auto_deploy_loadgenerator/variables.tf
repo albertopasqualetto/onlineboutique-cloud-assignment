@@ -21,6 +21,11 @@ variable "machineType" {
 }
 
 variable "instanceName" {
-  default = "locust"
+  default = "loadgenerator"
 }
 
+variable "GCPUserID" {
+}
+
+variable "GCPPrivateSSHKeyFile" {
+}
