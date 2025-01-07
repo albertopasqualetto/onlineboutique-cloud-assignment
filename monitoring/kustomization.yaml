@@ -2,6 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
 - prometheus.yaml
+- prometheus-infrastructure-metrics.yaml
 - grafana.yaml
 configMapGenerator:
 - name: prometheus-config
@@ -12,3 +13,46 @@ configMapGenerator:
   namespace: monitoring
   files:
   - grafana-prometheus-datasource.yml
+- name: grafana-dashboards
+  namespace: monitoring
+  files:
+  - grafana-dashboard-provider.yml
+  - grafana-dashboard.json
+- name: grafana-alerting
+  namespace: monitoring
+  files:
+  - grafana-alerting.yml
+patches:
+  - path: redis-exporter.patch.yaml
+  - path: checkoutservice/checkoutservice-container.patch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: checkoutservice
+  - path: checkoutservice/checkoutservice-service.patch.yaml
+    target:
+      version: v1
+      kind: Service
+      name: checkoutservice
+  - path: productcatalogservice/productcatalogservice-container.patch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: productcatalogservice
+  - path: productcatalogservice/productcatalogservice-service.patch.yaml
+    target:
+      version: v1
+      kind: Service
+      name: productcatalogservice
+
+# TODO remove disk space viz from dashboard because of stateless?
+# TODO check why with some time spans, the graph is not displayed in Grafana
+# TODO shipping service is the only one with otel stats export, but not implemented
+# TODO fix style of auto_deploy_locust
+# TODO implement used currencies->accessing countries with a custom exporter in currency service?
+# TODO check if container_fs_writes_bytes_total still works
+# TODO add redis dashboard
+# TODO show with respect to limits?  sum(container_memory_working_set_byte) by {container_name} / sum(label_join{kube_pod_container_resource_limits_memory_bytes, "container_name", "","container"}) by (container_name)
+# TODO avg or sum?

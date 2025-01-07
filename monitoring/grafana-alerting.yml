@@ -1,0 +1,248 @@
+# This is a Grafana alerting configuration file. It is not a Kubernetes .yaml file.
+
+apiVersion: 1
+
+contactPoints:
+  - name: Telegram OBA Grafana Alerts Channel
+    receivers:
+      - uid: telegram_OBA_grafana_alerts_channel
+        type: telegram
+        settings:
+          bottoken: 8111785523:AAG_7-WgYJqNU3iKlYQRxV3zsYAWxWTbkJA
+          chatid: "-1002370744150"
+          message: |
+            {{ template "default.message" . }}
+
+groups:
+    - name: 1m Evaluation Group
+      folder: Alert Rules
+      interval: 1m
+      rules:
+        - uid: high_CPU_load_node
+          title: High CPU Load Node
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: prometheusdatasource
+              model:
+                editorMode: code
+                expr: "predict_linear((100*(1-rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))[10m:], 10*60)\r\n"
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: B
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params: []
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - B
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                reducer: last
+                refId: B
+                type: reduce
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 90
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: B
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 1m
+          dashboardUid: obadashboard
+          panelId: 6
+          isPaused: false
+          notification_settings:
+            receiver: Telegram OBA Grafana Alerts Channel
+        - uid: disk_space_running_out
+          title: Disk Space Running Out
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: prometheusdatasource
+              model:
+                editorMode: code
+                expr: 100 - ((node_filesystem_avail_bytes{fstype!~"root.*",fstype!~"tmp.*",mountpoint!~"/tmp.*",mountpoint=~"/|/data"} / node_filesystem_size_bytes{fstype!~"root.*",fstype!~"tmp.*",mountpoint!~"/tmp.*",mountpoint=~"/|/data"}) * 100)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: B
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params: []
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - B
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                reducer: last
+                refId: B
+                type: reduce
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 85
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: B
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 5m
+          dashboardUid: obadashboard
+          panelId: 9
+          isPaused: false
+          notification_settings:
+            receiver: Telegram OBA Grafana Alerts Channel
+        - uid: inactive_pods
+          title: Not all pods are active
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: prometheusdatasource
+              model:
+                editorMode: code
+                expr: kubelet_desired_pods{static!="true"}-kubelet_active_pods{static!="true"}
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: B
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params: []
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - B
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                reducer: last
+                refId: B
+                type: reduce
+            - refId: C
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: B
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 1m
+          dashboardUid: obadashboard
+          panelId: 2
+          isPaused: false
+          notification_settings:
+            receiver: Telegram OBA Grafana Alerts Channel

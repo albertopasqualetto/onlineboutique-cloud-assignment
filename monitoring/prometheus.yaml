@@ -8,8 +8,10 @@ kind: Deployment
 metadata:
   name: prometheus
   namespace: monitoring
+  labels:
+    app: prometheus
 spec:
-  replicas: 1
+  # replicas: 1
   selector:
     matchLabels:
       app: prometheus
@@ -20,29 +22,83 @@ spec:
     spec:
       containers:
         - name: prometheus
-          image: prom/prometheus
+          image: quay.io/prometheus/prometheus
           args:
             - "--config.file=/etc/prometheus/prometheus-config.yml"
             - "--storage.tsdb.path=/prometheus"
+            - "--enable-feature=otlp-write-receiver"
           ports:
             - containerPort: 9090
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 4
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9090
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
           volumeMounts:
             - name: config-volume
               mountPath: /etc/prometheus
-            - name: data
-              mountPath: /prometheus
+            - name: storage-volume
+              mountPath: /data
+              subPath: ""
+        # TODO really needed?
+        - name: prometheus-server-configmap-reload
+          image: "quay.io/prometheus-operator/prometheus-config-reloader:v0.78.2"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - --watched-dir=/etc/config
+            - --listen-address=0.0.0.0:8080
+            - --reload-url=http://127.0.0.1:9090/-/reload
+          ports:
+            - containerPort: 8080
+              name: metrics
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+              scheme: HTTP
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+              scheme: HTTP
+            periodSeconds: 10
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+              readOnly: true
       volumes:
         - name: config-volume
           configMap:
             name: prometheus-config
-        - name: data
-          emptyDir: {}
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: prometheus
+      serviceAccountName: prometheus
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: prometheus
   namespace: monitoring
+  labels:
+    app: prometheus
 spec:
   ports:
     - name: http-prometheus
@@ -52,122 +108,79 @@ spec:
     app: prometheus
   type: ClusterIP
 ---
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: node-exporter
-  namespace: monitoring
-spec:
-  selector:
-    matchLabels:
-      app: node-exporter
-  template:
-    metadata:
-      labels:
-        app: node-exporter
-    spec:
-      containers:
-        - name: node-exporter
-          image: prom/node-exporter
-          ports:
-            - containerPort: 9100
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: node-exporter
-  namespace: monitoring
-spec:
-  ports:
-    - name: http-node-exporter
-      port: 9100
-      targetPort: 9100
-  selector:
-    app: node-exporter
-  type: ClusterIP
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: cadvisor
-  namespace: monitoring
-  annotations:
-      seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
-spec:
-  selector:
-    matchLabels:
-      app: cadvisor
-  template:
-    metadata:
-      labels:
-        app: cadvisor
-    spec:
-      serviceAccountName: cadvisor
-      containers:
-      - name: cadvisor
-        image: gcr.io/cadvisor/cadvisor
-        resources:
-          requests:
-            memory: 400Mi
-            cpu: 400m
-          limits:
-            memory: 2000Mi
-            cpu: 800m
-        volumeMounts:
-        - name: rootfs
-          mountPath: /rootfs
-          readOnly: true
-        - name: var-run
-          mountPath: /var/run
-          readOnly: true
-        - name: sys
-          mountPath: /sys
-          readOnly: true
-        - name: docker
-          mountPath: /var/lib/docker
-          readOnly: true
-        - name: disk
-          mountPath: /dev/disk
-          readOnly: true
-        ports:
-          - name: http
-            containerPort: 8080
-            protocol: TCP
-      automountServiceAccountToken: false
-      terminationGracePeriodSeconds: 30
-      volumes:
-      - name: rootfs
-        hostPath:
-          path: /
-      - name: var-run
-        hostPath:
-          path: /var/run
-      - name: sys
-        hostPath:
-          path: /sys
-      - name: docker
-        hostPath:
-          path: /var/lib/docker
-      - name: disk
-        hostPath:
-          path: /dev/disk
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: cadvisor
-  namespace: monitoring
-spec:
-  ports:
-    - name: http-cadvisor
-      port: 8080
-      targetPort: 8080
-  selector:
-    app: cadvisor
-  type: ClusterIP
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: cadvisor
+  name: prometheus
   namespace: monitoring
+---
+# TODO really needed?
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "8Gi"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+  namespace: monitoring
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+      - nodes/proxy
+      - nodes/metrics
+      - services
+      - endpoints
+      - pods
+      - ingresses
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "extensions"
+      - "networking.k8s.io"
+    resources:
+      - ingresses/status
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "discovery.k8s.io"
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - list
+      - watch
+  - nonResourceURLs:
+      - "/metrics"
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+  namespace: monitoring
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
