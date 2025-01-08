@@ -1,16 +1,15 @@
-apiVersion: networking.istio.io/v1alpha3
+apiVersion: networking.istio.io/v1
 kind: Gateway
 metadata:
   name: frontend-gateway
   namespace: default
 spec:
   selector:
-    istio: ingressgateway  # Associa il gateway all'Istio Ingress Gateway
+    istio: ingressgateway
   servers:
   - port:
       number: 80
       name: http
       protocol: HTTP
     hosts:
-    - "*"  # Accetta traffico da tutti i domini
-    
+    - "*"

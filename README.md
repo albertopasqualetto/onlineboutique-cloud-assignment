@@ -43,3 +43,6 @@
 - [ ] Next | Managing a storage backend for logging orders [Bonus]
 - [ ] Next | Deploying your own Kubernetes infrastructure [Bonus]
 - [ ] End | Review of recent publications [Bonus]
+
+
+`kubectl debug -it <POD> --image=curlimages/curl -- /bin/sh` used for debugging with curl

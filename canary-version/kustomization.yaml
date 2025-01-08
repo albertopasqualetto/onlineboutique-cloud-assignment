@@ -1,28 +1,14 @@
-apiVersion: kustomize.config.k8s.io/v1alpha1
-kind: Component
-#resources:
-#- frontend-destinationrule.yaml
-#- frontend-virtualservice.yaml
-#- ../microservices-demo/kubernetes-manifests/frontend.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- frontend-gateway.yaml
+- frontend-virtualservice.yaml
+- frontend-destinationrule.yaml
+# - frontend-v2.yaml
+# - flagger-canary.yaml
 
-#patches:
-#  - path: patch-frontendV2.yaml  # File che viene aggiunto al frontend.yaml
-#    target:
-#    kind: Deployment
+# TODO patch is in main folder, think about it, maybe always use gateway and istio
 
-# resources:
-#   - frontend.yaml
+# TODO delete frontend-external service
 
-patches:
-  - path: frontend-destinationrule.yaml
-    target:
-      kind: DestinationRule
-      name: frontend
-  - path: frontend-virtualservice.yaml
-    target:
-      kind: VirtualService
-      name: frontend
-
-
-
-
+# TODO Describe in your report the methodology you use to check that the traffic is split correctly between v1 and v2
