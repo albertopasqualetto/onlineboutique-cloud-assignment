@@ -13,7 +13,7 @@ spec:
     - destination:
         host: frontend
 # until here it works without canary
-        subset: v1
+        # subset: v1
     #   weight: 75
     # - destination:
     #     host: frontend

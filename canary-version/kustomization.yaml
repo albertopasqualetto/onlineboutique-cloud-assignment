@@ -5,7 +5,7 @@ resources:
 - frontend-virtualservice.yaml
 - frontend-destinationrule.yaml
 # - frontend-v2.yaml
-- flagger-canary.yaml
+# - flagger-canary.yaml
 
 # TODO patch is in main folder, think about it, maybe always use gateway and istio
 

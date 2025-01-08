@@ -13,6 +13,12 @@ patches:
       kind: Deployment
       name: frontend
   - path: canary-version/frontend-external-svc-remove.yaml
+  - path: canary-version/loadgenerator-istio.patch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: loadgenerator
     # target:
     #   # group: v1
     #   version: v1
