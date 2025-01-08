@@ -1,4 +1,3 @@
-# deploy_container.yml
 - name: Deploy Docker Container
   hosts: all
   # become: true
@@ -6,22 +5,7 @@
     docker_image_name: "us-central1-docker.pkg.dev/google-samples/microservices-demo/loadgenerator"
     docker_container_name: "my-loadgenerator"
     docker_image_tag: "v0.10.2"
-    # dockerfile_path: "loadgenerator"  # Update to the path where your Dockerfile is located
   tasks:
-    # - name: Copy application files to the VM
-    #   copy:
-    #     src: loadgenerator
-    #     dest: .
-    #     remote_src: no
-
-    # - name: Build Docker image
-    #   docker_image:
-    #     name: "{{ docker_image_name }}"
-    #     source: "build"
-    #     build:
-    #       path: "{{ dockerfile_path }}"
-    #     tag: "{{ docker_image_tag }}"
-
     - name: Run Docker container
       docker_container:
         name: "{{ docker_container_name }}"
