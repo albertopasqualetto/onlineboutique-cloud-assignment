@@ -14,4 +14,5 @@ resource "google_container_cluster" "primary" {
   node_config {
     machine_type = var.machineType
   }
+  deletion_protection = false
 }
