@@ -1,0 +1,60 @@
+echo "Deploying split frontend v1 and v2"
+
+kubectl patch deployment frontend --type=json -p='[
+  {
+    "op": "add",
+    "path": "/spec/template/metadata/labels/version",
+    "value": "v1"
+  }
+]'
+
+kubectl patch destinationrule frontend --type=json -p='[
+  {
+    "op": "replace",
+    "path": "/spec",
+    "value": {
+      "host": "frontend",
+      "subsets": [
+        {
+          "name": "v1",
+          "labels": {
+            "version": "v1"
+          }
+        },
+        {
+          "name": "v2",
+          "labels": {
+            "version": "v2"
+          }
+        }
+      ]
+    }
+  }
+]'
+
+kubectl patch virtualservice frontend --type=json -p='[
+  {
+    "op": "replace",
+    "path": "/spec/http/0",
+    "value": {
+      "route": [
+        {
+          "destination": {
+            "host": "frontend",
+            "subset": "v1"
+          },
+          "weight": 75
+        },
+        {
+          "destination": {
+            "host": "frontend",
+            "subset": "v2"
+          },
+          "weight": 25
+        }
+      ]
+    }
+  }
+]'
+
+kubectl apply -f canary-version/static-split/frontend-v2.yaml
