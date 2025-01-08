@@ -29,20 +29,20 @@
 
 ### Mandatory advanced steps
 
-- [x] A | Monitoring the application and the infrastructure
+- [x] Monitoring the application and the infrastructure
 - [ ] Next | Performance evaluation
-- [ ] M | Canary releases
+- [x] Canary releases
 
 ### Bonus steps
 
-- [x] A | Monitoring the application and the infrastructure [Bonus]
+- [x] Monitoring the application and the infrastructure [Bonus]
 - [ ] Next | Performance evaluation [Bonus]
-- [ ] Next | Autoscaling [Bonus]
-- [ ] Next | Optimizing the cost of your deployment [Bonus]
-- [ ] M | Canary releases [Bonus]
-- [ ] Next | Managing a storage backend for logging orders [Bonus]
-- [ ] Next | Deploying your own Kubernetes infrastructure [Bonus]
-- [ ] End | Review of recent publications [Bonus]
+- [ ] No | Autoscaling [Bonus]
+- [ ] No | Optimizing the cost of your deployment [Bonus]
+- [ ] Next | Canary releases [Bonus]
+- [ ] No | Managing a storage backend for logging orders [Bonus]
+- [ ] No | Deploying your own Kubernetes infrastructure [Bonus]
+- [ ] Next | Review of recent publications [Bonus]
 
 
 `kubectl debug -it <POD> --image=curlimages/curl -- /bin/sh` used for debugging with curl

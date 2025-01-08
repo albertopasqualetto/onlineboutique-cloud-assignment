@@ -114,7 +114,6 @@ metadata:
   name: prometheus
   namespace: monitoring
 ---
-# TODO really needed?
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
