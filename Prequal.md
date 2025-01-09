@@ -117,4 +117,25 @@ If issues are detected in the canary deployment, the load balancer can instantly
 More specifically in our approach Istio's Ingress Gateway was used as a load balancer to route traffic between the two versions of the frontend service. The Istio Gateway and VirtualService resources were configured to split traffic between the two versions declared in DestinationRule resources based on the weight assigned to each; Flagger operates automatically generating the cited resources.
 
 ### Future Works taking inspiration from Prequal
-# TODO
+
+Prequal system may be implemented in the load balancer which selects which release (primary or canary) to distribute at each request, but since the release of a canary version is rare, the improvements could not be so noticeable.
+
+Instead, Prequal dynamics can be implemented with more effectiveness in the load balancing system used to manage more pods hosting the same microservice version managed by HorizonalPodAutoscaler in Kubernetes.
+
+#### Leveraging Prequal for Autoscaling in Kubernetes
+
+Traditional Kubernetes autoscaling relies on metrics such as CPU and memory utilization. However, these metrics may not capture key load signals for applications that must respond to real-time traffic spikes. By utilizing signals provided by Prequal, such as Requests-in-Flight (RIF) and estimated latency, we can design a more responsive and optimized auto scaling system tailored for the project.
+
+##### Development Plan
+
+1. Prometheus Configuration:
+        Set up Prometheus to collect Prequal signals such as the number of Requests-in-Flight and estimated latency.
+
+2. Horizontal Pod Autoscaler (HPA):
+        Configure the HPA to respond to custom metrics based on Prequal signals.
+
+3. Load Variation Monitoring:
+        Observe how the HPA responds to changes in load and traffic patterns.
+
+4. Performance Analysis:
+        Evaluate the effectiveness of the implementation and identify potential improvements.

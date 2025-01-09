@@ -15,6 +15,7 @@
 
 When wanting to deploy a canary release:
 
+- `kubectl apply -k github.com/fluxcd/flagger/kustomize/istio` to install Flagger.
 - `kubectl apply -f .\canary-version\flagger-canary.yaml` to setup Flagger Canary, then wait for *frontend-primary* pod to be created and *frontend* to be deleted (`kubectl wait --for=delete pod -l app=frontend --timeout=300s`)
 - `kubectl set image deployment/frontend server=albertopasqualetto/oba-frontend:v2` to trigger Flagger to start the canary deployment, this version of the frontend has an additional endpoint: `/v2.txt`, which is used to differentiate the versions, the dockerfile is in the canary folder
 - describe files
@@ -30,48 +31,40 @@ We deployed a Canary Release strategy to introduce a new version of the microser
 
 ### Steps
 
-#### 1. Dockerfile Version
+#### Dockerfile Version
 
 We created new Docker images (`albertopasqualetto/oba-frontend:v2`, `albertopasqualetto/oba-frontend:v3`) with small differences between each version.
 
-#### 2. Setting Up Istio with Helm
+#### 75/25 Traffic Split
 
-We installed and set up Istio as outlined in the documentation:
 
-```bash
-# Add Istio Helm repository
-helm repo add istio https://istio-release.storage.googleapis.com/charts
-helm repo update
+1. **Install Istio**:
+   - Installed Istio with the default profile:
+     ```bash
+     istioctl manifest install --set profile=default
+     ```
+   - Enabled sidecar injection for all pods in the `default` namespace:
+     ```bash
+     kubectl label namespace default istio-injection=enabled
+     ```
 
-# Install Istio base
-helm install istio-base istio/base -n istio-system
+2. **Deploy Initial Application**:
+   - Deployed the initial `frontend` application with the necessary configurations for the traffic split:
+     ```bash
+     kubectl apply -k .
+     ```
 
-# Install Istiod
-helm install istio-base istio/base -n istio-system
+3. **Static Traffic Split Configuration**:
+   - Deployed a static 75/25 split for the `frontend` service using the following command:
+     ```bash
+     cat ./canary-version/static-split/deploy.run | pwsh -
+     ```
+     - The static split requires labeling `v1` and `v2` versions correctly in the deployment configuration.
 
-# Install Ingress Gateway
-helm install istio-ingressgateway istio/gateway -n istio-system --wait
-```
+4. **Traffic Distribution**:
+   - Configured Istio’s `VirtualService` and `DestinationRule` to direct 75% of the traffic to `v1` and 25% to `v2`.
 
-#### 3. Setting Up Prometheus with Helm
-
-We installed Prometheus to analyze the traffic:
-
-```bash
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install prometheus prometheus-community/prometheus --namespace istio-system
-```
-
-#### 4. Setting Up Grafana
-
-We installed Grafana to plot the results provided by Prometheus queries:
-
-```bash
-helm repo add grafana https://grafana.github.io/helm-charts
-```
-
-#### 5. Deploying Frontend Versions
+#### Deploying Frontend Versions
 
 - **Deploy Primary Frontend Version:**
 
@@ -140,14 +133,90 @@ We used Locust to generate traffic and test the Canary Release deployment.
 - **Monitoring with Prometheus and Grafana:**
 
   We analyzed traffic and performance metrics using Prometheus queries and Grafana dashboards.
+  ##### Results
+
+- **Traffic Generation with Locust:**
+
+  Traffic was generated correctly, as shown in the Locust interface:
+
+  ![Requests](./images/requests.png)
+
+- **Prometheus Metrics:**
+
+  Queries showed the expected traffic distribution:
+
+  ![Prometheus Query](./images/prom-perc-query.png)
+
+- **Grafana Dashboard:**
+
+  The plotted data demonstrated the performance of both versions:
+
+  ![Grafana Plot](./images/grafana-plot.png)
 
 #### 8. Automating the Canary Release with Flagger
 
-- **Flagger Installation:**
 
+# Canary Releases with Flagger
+
+## Flagger Configuration
+
+To set up Flagger for canary releases, the following steps were followed:
+
+1. Applied Prometheus configuration from Istio's addon samples:
+   ```bash
+   kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.24/samples/addons/prometheus.yaml
+   ```
+   This was chosen instead of the custom monitoring setup because it is easier to use and already includes the necessary configurations for integration with Flagger.
+
+2. Installed Flagger with Istio support:
+   ```bash
+   kubectl apply -k github.com/fluxcd/flagger/kustomize/istio
+   ```
+
+3. Configured Flagger Canary for the `frontend` service:
+   ```bash
+   kubectl apply -f ./canary-version/flagger-canary.yaml
+   ```
+   After this step, the `frontend-primary` pod is created, and the old `frontend` pod is deleted. The following command ensures the deletion of the old pod:
+   ```bash
+   kubectl wait --for=delete pod -l app=frontend --timeout=300s
+   ```
+
+4. Triggered the canary deployment:
+   ```bash
+   kubectl set image deployment/frontend server=albertopasqualetto/oba-frontend:v2
+   ```
+   - The new version (`v2`) of the `frontend` includes an additional endpoint `/v2.txt` to distinguish between versions.
+   - The corresponding Dockerfile is located in the `canary` folder.
+
+---
+
+## Progress Monitoring
+
+To monitor the canary deployment's progress, use:
+```bash
+kubectl describe canary/frontend
+```
+
+### Additional Visualization
+- A useful dashboard for Istio and Flagger:
   ```bash
-  kubectl apply -k github.com/fluxcd/flagger/kustomize/istio
+  kubectl apply -f https://raw.githubusercontent.com/istio/istio/refs/heads/release-1.24/samples/addons/kiali.yaml
+  kubectl rollout status deployment/kiali -n istio-system
+  istioctl dashboard kiali
   ```
+
+---
+
+## Behavior of Automatic Rollouts with Flagger
+
+When the rollout is managed by Flagger:
+- The canary version is progressively deployed to an increasing percentage of requests.
+- If no traffic is detected, the canary deployment is paused until requests are received.
+
+---
+
+This setup ensures smooth and controlled canary releases while providing real-time monitoring and progress tracking through Flagger and Istio dashboards.
 
 - **Flagger Canary Configuration:**
 
@@ -178,34 +247,3 @@ We used Locust to generate traffic and test the Canary Release deployment.
         - name: request-duration
           threshold: 500
   ```
-
-- **Monitoring Canary Progress:**
-
-  We monitored the progress by analyzing metrics and gradually shifting traffic:
-
-  ```bash
-  kubectl get canaries
-  ```
-
----
-
-### Results
-
-- **Traffic Generation with Locust:**
-
-  Traffic was generated correctly, as shown in the Locust interface:
-
-  ![Requests](./images/requests.png)
-
-- **Prometheus Metrics:**
-
-  Queries showed the expected traffic distribution:
-
-  ![Prometheus Query](./images/prom-perc-query.png)
-
-- **Grafana Dashboard:**
-
-  The plotted data demonstrated the performance of both versions:
-
-  ![Grafana Plot](./images/grafana-plot.png)
-
