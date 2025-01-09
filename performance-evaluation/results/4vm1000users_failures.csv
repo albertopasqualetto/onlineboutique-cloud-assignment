@@ -1,0 +1,39 @@
+Method,Name,Error,Occurrences
+GET,/product/1YMWWN1N4O,LocustBadStatusCode(code=500),124
+GET,/product/LS4PSXUNUM,HTTPParseError('Incomplete response.'),1
+GET,/product/0PUK6V6EV0,LocustBadStatusCode(code=503),551
+POST,/setCurrency,LocustBadStatusCode(code=500),145
+GET,/,LocustBadStatusCode(code=503),395
+GET,/product/OLJCESPC7Z,LocustBadStatusCode(code=503),578
+GET,/product/0PUK6V6EV0,LocustBadStatusCode(code=500),127
+GET,/product/L9ECAV7KIM,HTTPParseError('Incomplete response.'),3
+GET,/product/66VCHSJNUP,LocustBadStatusCode(code=503),557
+GET,/product/LS4PSXUNUM,LocustBadStatusCode(code=503),559
+POST,/setCurrency,LocustBadStatusCode(code=503),824
+GET,/product/1YMWWN1N4O,LocustBadStatusCode(code=503),566
+POST,/cart,HTTPParseError('Incomplete response.'),2
+POST,/cart,LocustBadStatusCode(code=500),211
+GET,/cart,LocustBadStatusCode(code=500),265
+GET,/product/6E92ZMYYFZ,LocustBadStatusCode(code=503),588
+GET,/product/L9ECAV7KIM,LocustBadStatusCode(code=500),118
+GET,/cart,HTTPParseError('Incomplete response.'),9
+GET,/product/L9ECAV7KIM,LocustBadStatusCode(code=503),547
+GET,/,LocustBadStatusCode(code=500),791
+GET,/product/66VCHSJNUP,LocustBadStatusCode(code=500),145
+GET,/product/2ZYFJ3GM2N,LocustBadStatusCode(code=500),124
+POST,/cart,LocustBadStatusCode(code=503),1396
+GET,/product/OLJCESPC7Z,LocustBadStatusCode(code=500),140
+GET,/cart,LocustBadStatusCode(code=503),1130
+GET,/product/2ZYFJ3GM2N,LocustBadStatusCode(code=503),567
+GET,/product/6E92ZMYYFZ,LocustBadStatusCode(code=500),124
+GET,/product/9SIQT8TOJO,HTTPParseError('Incomplete response.'),3
+POST,/cart/checkout,LocustBadStatusCode(code=503),512
+POST,/cart/checkout,LocustBadStatusCode(code=500),67
+GET,/product/9SIQT8TOJO,LocustBadStatusCode(code=503),558
+GET,/product/6E92ZMYYFZ,HTTPParseError('Incomplete response.'),2
+GET,/product/1YMWWN1N4O,HTTPParseError('Incomplete response.'),5
+GET,/product/LS4PSXUNUM,LocustBadStatusCode(code=500),137
+GET,/product/0PUK6V6EV0,HTTPParseError('Incomplete response.'),3
+POST,/setCurrency,HTTPParseError('Incomplete response.'),1
+GET,/product/66VCHSJNUP,HTTPParseError('Incomplete response.'),4
+GET,/product/9SIQT8TOJO,LocustBadStatusCode(code=500),125

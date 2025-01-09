@@ -15,7 +15,7 @@ resource "google_compute_instance" "vm_instance" {
 
   boot_disk {
     initialize_params {
-      image = "cos-cloud/cos-117-lts"
+      image = "debian-cloud/debian-12"
     }
   }
 
@@ -27,14 +27,11 @@ resource "google_compute_instance" "vm_instance" {
   }
 }
 
-# output "ip" {
-#   value = "${google_compute_instance.vm_instance[0].network_interface.0.access_config.0.nat_ip}"
-# }
-
 resource "local_file" "hosts" {
-    # content  = google_compute_instance.vm_instance.*.network_interface.0.access_config.0.access_config.0.nat_ip
     content = <<EOF
-${google_compute_instance.vm_instance[0].network_interface.0.access_config.0.nat_ip}
+%{ for i in range(var.machineCount) }
+${google_compute_instance.vm_instance[i].network_interface.0.access_config.0.nat_ip}
+%{ endfor }
 
 [all:vars]
 ansible_ssh_user=${var.GCPUserID}
@@ -42,4 +39,11 @@ ansible_ssh_private_key_file='${var.GCPPrivateSSHKeyFile}'
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 EOF
     filename = "hosts"
+}
+
+resource "local_file" "loadgenerator_ips" {
+    content = <<EOF
+%{ for i in range(var.machineCount) }${google_compute_instance.vm_instance[i].network_interface.0.access_config.0.nat_ip}${i < var.machineCount - 1 ? "," : ""}%{ endfor }
+EOF
+    filename = "loadgenerator_ips"
 }

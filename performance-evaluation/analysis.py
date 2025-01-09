@@ -57,5 +57,5 @@ def plot_response_times_from_folder(folder_path):
     plt.show()
 
 
-folder_path = "./performance-evaluation/out"
+folder_path = "./performance-evaluation/results"
 plot_response_times_from_folder(folder_path)

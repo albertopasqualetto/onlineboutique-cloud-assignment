@@ -1,0 +1,26 @@
+Method,Name,Error,Occurrences
+GET,/product/LS4PSXUNUM,HTTPParseError('Incomplete response.'),6
+GET,/product/0PUK6V6EV0,LocustBadStatusCode(code=503),1906
+GET,/,LocustBadStatusCode(code=503),2322
+GET,/product/OLJCESPC7Z,LocustBadStatusCode(code=503),1889
+GET,/product/L9ECAV7KIM,HTTPParseError('Incomplete response.'),5
+GET,/product/66VCHSJNUP,LocustBadStatusCode(code=503),1811
+GET,/product/LS4PSXUNUM,LocustBadStatusCode(code=503),1834
+POST,/setCurrency,LocustBadStatusCode(code=503),2599
+GET,/product/1YMWWN1N4O,LocustBadStatusCode(code=503),1918
+GET,/product/6E92ZMYYFZ,LocustBadStatusCode(code=503),1882
+GET,/product/OLJCESPC7Z,HTTPParseError('Incomplete response.'),3
+GET,/cart,HTTPParseError('Incomplete response.'),8
+GET,/product/L9ECAV7KIM,LocustBadStatusCode(code=503),1819
+POST,/cart,LocustBadStatusCode(code=503),3904
+GET,/product/2ZYFJ3GM2N,HTTPParseError('Incomplete response.'),2
+GET,/cart,LocustBadStatusCode(code=503),3903
+GET,/product/2ZYFJ3GM2N,LocustBadStatusCode(code=503),1905
+GET,/product/9SIQT8TOJO,HTTPParseError('Incomplete response.'),6
+POST,/cart/checkout,LocustBadStatusCode(code=503),1275
+GET,/,HTTPParseError('Incomplete response.'),6
+GET,/product/9SIQT8TOJO,LocustBadStatusCode(code=503),1836
+GET,/product/6E92ZMYYFZ,HTTPParseError('Incomplete response.'),5
+GET,/product/1YMWWN1N4O,HTTPParseError('Incomplete response.'),7
+GET,/product/0PUK6V6EV0,HTTPParseError('Incomplete response.'),6
+GET,/product/66VCHSJNUP,HTTPParseError('Incomplete response.'),2

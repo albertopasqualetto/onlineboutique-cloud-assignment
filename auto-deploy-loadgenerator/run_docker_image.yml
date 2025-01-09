@@ -1,6 +1,5 @@
 - name: Deploy Docker Container
   hosts: all
-  # become: true
   vars:
     docker_image_name: "us-central1-docker.pkg.dev/google-samples/microservices-demo/loadgenerator"
     docker_container_name: "my-loadgenerator"

@@ -1,0 +1,71 @@
+- name: Run Locust and Retrieve Logs
+  hosts: all
+  become: true
+  tasks:
+    - name: Install dependencies
+      apt:
+        name:
+          - python3
+          - python3-pip
+        state: present
+        update_cache: yes
+
+    - name: Install Locust
+      pip:
+        name: locust
+        extra_args: "--break-system-packages"
+
+    - name: Install Faker
+      pip:
+        name: faker
+        extra_args: "--break-system-packages"
+
+    - name: Upload locustfile.py
+      copy:
+        src: ../microservices-demo/src/loadgenerator/locustfile.py
+        dest: ~/locustfile.py
+
+    - name: Remove locust_finished if present
+      file:
+        path: /tmp/locust_finished
+        state: absent
+
+    - name: Start Locust
+      shell: python3 -m locust -f ~/locustfile.py --headless --host http://"{{ frontend_external_ip }}" --users {{ users }} --spawn-rate {{ spawn_rate }} --csv {{ csv_name }} --run-time 3m > locust_output.log 2>&1 & echo $! > /tmp/locust_pid && touch /tmp/locust_finished
+      async: 0
+      poll: 0
+
+    - name: Wait for Locust to finish
+      wait_for:
+        path: /tmp/locust_finished2
+        state: present
+        timeout: 600
+
+    - name: Append hostname to CSV filenames
+      shell: >
+        for file in ~/{{ csv_name }}*.csv; do
+          mv "$file" "${file%.csv}_$(hostname).csv"
+        done
+
+
+    - name: Find all CSV files
+      shell: cd ~ && find . -maxdepth 1 -name "{{ csv_name }}*.csv" -type f | cut -d'/' -f2
+      register: csv_files
+      ignore_errors: yes
+      become_user: "alberto_pasqualetto01_gmail_com"
+
+    - name: Remove CSV files from remote
+      file:
+      path: ~/{{ item }}
+      state: absent
+      with_items: "{{ csv_files.stdout_lines }}"
+      become_user: "alberto_pasqualetto01_gmail_com"
+
+    - name: Retrieve CSV files
+      fetch:
+        src: ~/{{ item }}
+        dest: ./results/
+        flat: yes
+      with_items: "{{ csv_files.stdout_lines }}"
+      become_user: "alberto_pasqualetto01_gmail_com"
+
