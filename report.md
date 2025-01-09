@@ -374,7 +374,7 @@ This extended monitoring and alerting setup enhances visibility into the applica
   - Where `LOADGEN_LIST` is a comma-separated list of the ip addresses of the deployed VMs.
   - This is actually a real distributed load generation because it uses the locust master-slave architecture, the previous approach just managed manually multiple locust instances.
 - The results have been analyzed with the `analysis.py` script to generate a plot.
-- Show plot # TODO
+![Performance evaluation plot](./performance-evaluation/plot.png)
 
 ## Canary Release
 
