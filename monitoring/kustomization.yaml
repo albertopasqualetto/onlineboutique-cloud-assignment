@@ -46,9 +46,3 @@ patches:
       version: v1
       kind: Service
       name: productcatalogservice
-
-# TODO check why with some time spans, the graph is not displayed in Grafana (SKIP)
-# TODO shipping service is the only one with otel stats export, but not implemented, write in report
-# TODO check if container_fs_writes_bytes_total still works
-# TODO show with respect to limits?  sum(container_memory_working_set_byte) by {container_name} / sum(label_join{kube_pod_container_resource_limits_memory_bytes, "container_name", "","container"}) by (container_name)
-# TODO avg or sum?

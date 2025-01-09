@@ -220,8 +220,6 @@ We used the image of the load generator provided by the original repository (`us
 
 ## Mandatory part
 
-# Monitoring the Application and the Infrastructure
-
 Monitoring the application and its supporting infrastructure is essential for understanding system behavior, identifying bottlenecks, and detecting potential issues before they impact the end users. The following outlines the steps and tools utilized for implementing monitoring in this project.
 
 ## Implementation Overview
@@ -230,7 +228,7 @@ Monitoring the application and its supporting infrastructure is essential for un
 All related files and configurations are organized in the **`monitoring`** folder for ease of access and maintenance.
 
 ### Deployment Approach
-- **Kustomize** was used to manage Kubernetes manifests without relying on Helm, aligning with the project's requirements for simplicity and flexibility.
+- **Kustomize** was used to manage Kubernetes manifests without relying on Helm, aligning with the project's requirements for simplicity and flexibility so in order to deploy the monitoring infrastructure, ensure to uncomment the monitoring section in the `kustomization.yaml` file and then run `kubectl apply -k .`.
 
 ### Prometheus Setup
 Prometheus was employed as the primary tool for collecting and aggregating metrics. Below are the specific configurations and components used:
@@ -335,6 +333,8 @@ Beyond general resource consumption metrics, we implemented additional monitorin
   - Exposed metrics using the `promhttp` package.
 
 - **Visualization**: Grafana dashboard displays metrics for product retrievals.
+
+- In the procedure of collecting more specific metrics, we encountered some predisposition for tracing and metrics exporters in some microservices like described in [Google Cloud Operations Integration page](https://github.com/GoogleCloudPlatform/microservices-demo/tree/main/kustomize/components/google-cloud-operations), actually only the shipping service integrates a OpenTelemetry exporter, but in the end it was only a mock-up. For this reason we decided to ignore this information.
 
 ---
 
