@@ -1,4 +1,4 @@
-- name: Run Locust and Retrieve Logs
+- name: Run Locust and Retrieve CSV files
   hosts: all
   become: true
   tasks:
