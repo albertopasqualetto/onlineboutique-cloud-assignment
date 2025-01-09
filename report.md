@@ -260,7 +260,7 @@ To visualize the metrics collected by Prometheus:
 - Predefined dashboards were included in the monitoring setup to provide instant insights.
 
 ---
-
+# TODO
 - Grafana
   - provisioned from file
     - /etc/grafana/provisioning/datasources <- grafana-datasources configmap 
