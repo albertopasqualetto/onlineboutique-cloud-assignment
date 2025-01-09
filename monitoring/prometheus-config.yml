@@ -274,5 +274,4 @@ scrape_configs:
   static_configs:
   - targets: ['productcatalogservice.default.svc.cluster.local:9090']
 
-# TODO remove non needed jobs
 # TODO test on gke with more than one node

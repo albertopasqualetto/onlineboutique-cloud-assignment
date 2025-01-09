@@ -1,0 +1,10 @@
+- op: replace
+  path: /spec/template/spec/containers/0/env/0
+  value:
+    name: FRONTEND_ADDR
+    value: "istio-ingressgateway.istio-system.svc.cluster.local:80"
+- op: replace
+  path: /spec/template/spec/initContainers/0/env/0
+  value:
+    name: FRONTEND_ADDR
+    value: "istio-ingressgateway.istio-system.svc.cluster.local:80"

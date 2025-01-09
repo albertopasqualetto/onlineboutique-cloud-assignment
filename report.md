@@ -34,5 +34,5 @@ We used the image of the load generator provided by the original repository (`us
 - `terraform -chdir="auto_deploy_loadgenerator" apply -var-file="../terraform.tfvars"`
 
 - We created the ansible playbook `run_docker_image.yml` to run the Locust loadgenerator.
-- `ansible-playbook -i ./auto_deploy_loadgenerator/hosts ./auto_deploy_loadgenerator/run_docker_image.yml --extra-vars "frontend_external_ip=$(kubectl get svc frontend-external -o jsonpath='{.status.loadBalancer.ingress[0].ip}')`
+- `ansible-playbook -i ./auto_deploy_loadgenerator/hosts ./auto_deploy_loadgenerator/run_docker_image.yml --extra-vars "frontend_external_ip=$(kubectl get svc frontend-external -o jsonpath='{.status.loadBalancer.ingress[0].ip}')` # TODO fix this with new istio
 - ansible does not work from Windows!!!
