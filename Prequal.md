@@ -1,12 +1,4 @@
-# Protean Prequal
-
-## Authors
-- **Alberto Pasqualetto**
-- **Matteo Ciccone**
-
----
-
-## Prequal
+# Prequal
 
 This paper presents **Prequal**, a load balancer for distributed multi-tenant systems aimed at minimizing real-time request latency. Unlike traditional systems that focus on equalizing CPU utilization across servers, Prequal uses **Requests-In-Flight (RIF)** and **latency** as its primary metrics to dynamically assign workloads. Prequal applies the **Power of d Choices paradigm (PodC)** to optimize server selection.
 
@@ -19,11 +11,10 @@ Prequal has been successfully deployed in real-world systems such as **YouTube**
 - Tail latency.
 - Resource utilization.
 
----
 
 ## Weighted Round Robin (WRR)
-
 The authors explore the operational environment of large-scale services like **YouTube**, comprising a network of jobs issuing millions of queries to distributed replicas.
+They show that traditional load balancers like **Weighted Round Robin (WRR)** are insufficient for such systems, as they fail to account for the complexities of distributed systems and Prequal is proposed as a solution.
 
 ### How WRR Works
 **Weighted Round Robin (WRR)** uses smoothed historical statistics for each replica to periodically compute weights. These include:
@@ -43,13 +34,11 @@ Where:
 
 ### Limitation of WRR
 While WRR performs well if all replicas stay within their CPU allocations, overload is common and occurs even at small timescales. In such cases, WRR fails to handle the complexities of distributed systems, particularly under high-load spikes, leading to:
-- Increased latency spikes.
+- Increased tail latencies.
 - Service-level objective (SLO) violations.
 
----
 
 ## System Design
-
 Prequal dynamically adjusts load balancing by combining two key signals:
 1. **Requests-In-Flight (RIF)**.
 2. **Latency**.
@@ -81,17 +70,13 @@ Prequal uses the **Hot-Cold Lexicographic (HCL) Rule**:
 
 This approach balances load effectively while minimizing latency.
 
----
 
 ## Error Handling
-
 ### Sinkholing Prevention
 A problematic replica may process queries quickly by returning errors, making it seem less loaded. This behavior, known as **sinkholing**, can attract more traffic, exacerbating issues. Prequal avoids this using heuristic-based safeguards.
 
----
 
 ## Performance Evaluation
-
 ### Observed Improvements
 Prequal consistently outperformed WRR in both real-world deployments (e.g., YouTube) and test environments:
 - **2x reduction** in tail latency and CPU utilization.
@@ -102,16 +87,12 @@ Prequal consistently outperformed WRR in both real-world deployments (e.g., YouT
 ### Robustness
 Prequal proved beneficial regardless of whether other services in the network used it. It works efficiently across diverse job types and query processing requirements (e.g., CPU, RAM, latency).
 
----
 
 ## Key Innovations of Prequal
-
 1. **Asynchronous Probing**: Ensures real-time updates without impacting query processing.
 2. **Hot-Cold Lexicographic Rule**: Balances the trade-off between load and latency.
 3. **Error Aversion**: Safeguards against issues like sinkholing.
 4. **Optimized Resource Usage**: Reduces tail latencies and overhead while enabling higher utilization.
-
----
 
 
 ## Canary Release and load balancer
@@ -133,3 +114,7 @@ If issues are detected in the canary deployment, the load balancer can instantly
 
 - As confidence in the new version grows, the load balancer can progressively increase the proportion of traffic routed to the canary version until it eventually serves 100% of the traffic. As we did with Flugger in our example.
 
+More specifically in our approach Istio's Ingress Gateway was used as a load balancer to route traffic between the two versions of the frontend service. The Istio Gateway and VirtualService resources were configured to split traffic between the two versions declared in DestinationRule resources based on the weight assigned to each; Flagger operates automatically generating the cited resources.
+
+### Future Works taking inspiration from Prequal
+# TODO
