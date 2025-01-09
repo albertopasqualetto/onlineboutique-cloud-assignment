@@ -126,13 +126,6 @@ Instead, Prequal dynamics can be implemented with more effectiveness in the load
 
 Traditional Kubernetes autoscaling relies on metrics such as CPU and memory utilization. However, these metrics may not capture key load signals for applications that must respond to real-time traffic spikes. By utilizing signals provided by Prequal, such as Requests-in-Flight (RIF) and estimated latency, we can design a more responsive and optimized auto scaling system tailored for the project.
 
-<!-- #### Objectives
-
-# TODO VABBE QUESTE SONO LE CARATTERISTICHE DI PREQUAL DETTE PRIMA
-- Resource Optimization: Reduce resource utilization costs while maintaining performance levels.
-- Load Responsiveness: Ensure the autoscaling system reacts quickly to traffic spikes, preventing slowdowns or downtime.
-- Data-Driven Scaling: Use load balancing signals (e.g., RIF) to make informed scaling decisions. -->
-
 ##### Development Plan
 
 1. Prometheus Configuration:
