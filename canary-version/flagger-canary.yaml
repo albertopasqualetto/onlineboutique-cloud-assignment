@@ -61,7 +61,7 @@ spec:
       # maximum req duration P99
       # milliseconds
       thresholdRange:
-        max: 500  # TODO maybe this is sufficient for testing the rollback for bonus point
+        max: 500
       interval: 30s
     # # testing (optional)
     # webhooks:

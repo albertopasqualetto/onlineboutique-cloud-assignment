@@ -589,7 +589,7 @@ This setup ensures smooth and controlled canary releases while providing real-ti
         - "*"
     analysis:
       interval: 1m
-      threshold: 5
+      threshold: 10
       maxWeight: 50
       stepWeight: 10
       metrics:
@@ -599,3 +599,51 @@ This setup ensures smooth and controlled canary releases while providing real-ti
           threshold: 500
   ```
 
+## Bonus part: Automated Rollback of Canary Release
+
+Using the Flagger Canary configuration described above, in particular the `analysis` section, Flagger automatically detects issues based on the defined metrics thresholds. When an issue is detected, Flagger initiates an automated rollback to the previous version.
+
+### Rollback Process
+
+In order to simulate a rollback, we introduced a 3s latency for all the requests in the `v3` version of the `frontend` service except for the `_healthz` endpoint used to check the service's health and liveness by Kubernetes, otherwise the service wouldn't start correctly.
+
+The relevant added line:
+```go
+r.Use(func(next http.Handler) http.Handler {
+  return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    time.Sleep(3 * time.Second)
+    next.ServeHTTP(w, r)
+  })
+})
+```
+```
+
+The actual implementation can be seen in the `canary-version/frontend-v3.Dockerfile` file.
+
+To perform rollback some metrics thresholds need to be present in the *Canary* resource configuration, this is the relvant part:
+
+```yaml
+    analysis:
+      interval: 1m
+      threshold: 10
+      metrics:
+        - name: request-duration
+          threshold: 500
+```
+
+It says that when the request duration exceeds 500ms (in the v3 version it happens) for 10 times (probes are requested every 1 minute), the rollback is triggered.
+
+The trigger of canary deployment is as before with the command `kubectl set image deployment/frontend server=albertopasqualetto/oba-frontend:v3`.
+
+This is an output of the `kubectl describe canary/frontend` command:
+
+```
+  Normal   Synced  13m                   flagger  New revision detected! Scaling up frontend.default
+  Normal   Synced  12m                   flagger  Starting canary analysis for frontend.default
+  Normal   Synced  12m                   flagger  Advance frontend.default canary weight 10
+  Warning  Synced  2m52s (x10 over 11m)  flagger  Halt frontend.default advancement request duration 4.975s > 500ms
+  Warning  Synced  112s                  flagger  Rolling back frontend.default failed checks threshold reached 10
+  Warning  Synced  112s                  flagger  Canary failed! Scaling down frontend.default
+```
+
+From the output it can be seen that the deployment was rolled back because the request duration exceeded the threshold for 10 minutes.
