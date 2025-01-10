@@ -6,3 +6,5 @@ terraform.tfvars
 *.key.json
 buffer/
 __pycache__/
+hosts
+loadgenerator_ips
