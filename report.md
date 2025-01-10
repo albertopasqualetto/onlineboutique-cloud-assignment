@@ -1,6 +1,11 @@
 # Report
 
-*Authors: Alberto Pasqualetto, Matteo Ciccone*
+**Lab Assignment (Fall 2024)**
+*Cloud Computing - From Infrastructure to Applications Course, ENSIMAG, Grenoble INP*
+
+***Authors: Alberto Pasqualetto, Matteo Ciccone***
+
+*Repository: [albertopasqualetto/onlineboutique-cloud-assignment](https://github.com/albertopasqualetto/onlineboutique-cloud-assignment)*
 
 Every command is to be run from the root of the repository.
 
@@ -8,8 +13,7 @@ Every command is to be run from the root of the repository.
 
 We created the cluster from GKE dashboard, choosing the standard configuration (zone, cluster name, node count, ...).
 
-Then we cloned the repository;
- and we connected to the cluster with `gcloud container clusters get-credentials onlineboutique`
+Then we cloned the repository and we connected to the cluster with `gcloud container clusters get-credentials onlineboutique`
 
 Finally we deployed the application with `kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/refs/heads/main/release/kubernetes-manifests.yaml` retrieving it directly from the original repository.
 
@@ -18,11 +22,13 @@ We verified the deployment was succesful obtaining the ip address of the fronten
 ### Autopilot mode
 
 **Autopilot** is a GKE operation mode where Google manages the cluster configuration, including:
+
 - Nodes
 - Scaling
 - Security
 
 According to the [Autopilot vs Standard Feature Comparison](https://cloud.google.com/kubernetes-engine/docs/resources/autopilot-standard-feature-comparison):
+
 - Autopilot **manages nodes**.
 - Autopilot **automatically scales the number and size of nodes** based on Pods in the cluster.
 - Autopilot uses a **general-purpose platform optimized for most workloads**.
@@ -32,6 +38,7 @@ This hides cluster configuration details from the user, addressing issues like l
 ## Analyzing the provided configuration
 
 The `kubernetes-manifests.yaml` file defines configurations for all Online Boutique services. For each service, it includes:
+
 - A **`Deployment`**
 - One or more **`Service`** objects
 - A **`ServiceAccount`**
@@ -144,11 +151,13 @@ metadata:
 #### Explanation of Key Fields
 
 ##### Common Fields
+
 - **`apiVersion`**: The API version for the object.
 - **`kind`**: The type of Kubernetes object (e.g., `Deployment`, `Service`, `ServiceAccount`).
 - **`metadata`**: Contains the object's name and labels; in this piece of manifest all objects have "frontend" name except one service with "frontend-external" name and all objects have "app: frontend" label.
 
 ##### Deployment Specification (`spec`)
+
 - **`selector.matchLabels.app: frontend`**: Matches pods managed by this deployment.
 - **`template`**:
   - **`metadata`**:
@@ -177,17 +186,19 @@ metadata:
       - Memory: `64Mi` (min), `128Mi` (max).
 
 ##### Service Specifications (`spec`)
+
 - **Frontend Service (`ClusterIP`)**:
-   - **`type: ClusterIP`**: Exposes the service within the cluster.
-   - **`selector.app: frontend`**: Routes traffic to pods with matching labels; in this case the previously defined deployment.
-   - **`ports`**: Maps external port 80 to internal port 8080 with the name "http".
+  - **`type: ClusterIP`**: Exposes the service within the cluster.
+  - **`selector.app: frontend`**: Routes traffic to pods with matching labels; in this case the previously defined deployment.
+  - **`ports`**: Maps external port 80 to internal port 8080 with the name "http".
 
 - **Frontend External Service (`LoadBalancer`)**:
-   - **`type: LoadBalancer`**: Exposes the service externally with a public IP through a requested load balancer (GCP provides one automatically).
-   - **`selector.app: frontend`**: Routes traffic to pods with matching labels; in this case the previously defined deployment.
-   - **`ports`**: Maps external port 80 to internal port 8080 with the name "http".
+  - **`type: LoadBalancer`**: Exposes the service externally with a public IP through a requested load balancer (GCP provides one automatically).
+  - **`selector.app: frontend`**: Routes traffic to pods with matching labels; in this case the previously defined deployment.
+  - **`ports`**: Maps external port 80 to internal port 8080 with the name "http".
 
 ##### ServiceAccount
+
 A **`ServiceAccount`** represents a non-human Kubernetes user, providing a distinct identity for interactions, here it has no `spec` definition.
 
 ## Deploying the load generator on a local machine
@@ -200,10 +211,10 @@ We used the image of the load generator provided by the original repository (`us
 
 First of all we collected boilerplate files from "[Running MPI applications](https://roparst.gricad-pages.univ-grenoble-alpes.fr/cloud-tutorials/mpi/)", including:
 
-   - `simple_deployment.tf`
-   - `variables.tf`
-   - `parse-tf-state.py`
-   - `setup.sh`
+- `simple_deployment.tf`
+- `variables.tf`
+- `parse-tf-state.py`
+- `setup.sh`
 
 Then we simplified them delegating all the work to Terraform in `auto-deploy-loadgenerator/deployment.tf` and `auto-deploy-loadgenerator/variables.tf`:
 
@@ -249,7 +260,6 @@ Then using the `hosts` file generated by Terraform we runned the playbook: `ansi
 
 > **Note**: Ansible does not work directly on Windows. To address this, WSL (Windows Subsystem for Linux) was used to run Ansible in a Linux environment.
 
-
 ## Monitoring the application and the infrastructure
 
 Monitoring the application and its supporting infrastructure is crucial for understanding system behavior, identifying bottlenecks, and detecting potential issues before they impact the end users. The following outlines the steps and tools utilized for implementing monitoring in this project, everything related to this part is in the `monitoring` folder.
@@ -261,6 +271,7 @@ This objective drove the usage of **[Kustomize](https://kustomize.io/)** to mana
 ### Mandatory part
 
 #### Prometheus
+
 Prometheus was employed as the primary tool for collecting and aggregating metrics. Below are the specific configurations and components used:
 
 - **[Prometheus](https://prometheus.io/)**: The core monitoring tool for collecting metrics. It is responsible for scraping metrics from various exporters and services. Deployed from the `prometheus.yaml` file.
@@ -274,9 +285,9 @@ Prometheus was employed as the primary tool for collecting and aggregating metri
   - **[cAdvisor](https://github.com/google/cadvisor)**:
     - Collects statistics at the **pod level**, including CPU, memory, and container-specific metrics.
     - Also deployed as a **DaemonSet** for consistent monitoring across all nodes in the cluster.
--**Prometheus Configuration**
+- **Prometheus Configuration**
   The **`prometheus-config.yml`** file defines scraping jobs for collecting metrics. This includes configurations for node-exporter and cAdvisor endpoints to ensure seamless integration.
-  Ir scrapes both metrics from static targets (like `productcatalogservice.default.svc.cluster.local:9090`) and also defines some scrape jobs for the exporters which have the annotation `prometheus.io/scrape: 'true'`.
+  It scrapes both metrics from static targets (like `productcatalogservice.default.svc.cluster.local:9090`) and also defines some scrape jobs for the exporters which have the annotation `prometheus.io/scrape: 'true'`.
 
 #### Grafana Integration
 
@@ -338,6 +349,7 @@ Default credentials for Grafana are `admin:admin`.
 Beyond general resource consumption metrics, we implemented additional monitoring capabilities to collect more specific metrics for certain components. Below are the enhancements:
 
 ##### Redis Metrics
+
 - **Purpose**: Redis is used for the cart functionality in the application.
 - **Exporter**: We used the `oliver006/redis_exporter` to collect Redis-specific metrics.
 - **Integration**:
@@ -346,6 +358,7 @@ Beyond general resource consumption metrics, we implemented additional monitorin
   For example the query to get current number of carts is simply `redis_db_keys{db="db0"}`.
 
 ##### gRPC Metrics
+
 - **Goal**: Monitor gRPC metrics for services, using the `checkoutservice` as an example.
 - **Challenge**:
   - Required building familiarity with Golang as we were new to the language.
@@ -364,6 +377,7 @@ Beyond general resource consumption metrics, we implemented additional monitorin
   - Integrated using Kubernetes patches.
   - Built a new image: `albertopasqualetto/productcatalogservice:monitoring`.
   - Used the `github.com/prometheus/client_golang/promauto` library to define a custom counter metric:
+
     ```go
     productRetrievalCounter = promauto.NewCounterVec(
       prometheus.CounterOpts{
@@ -375,6 +389,7 @@ Beyond general resource consumption metrics, we implemented additional monitorin
     [...]
     productRetrievalCounter.WithLabelValues(found.Id, found.Name).Inc()
     ```
+
   - Exposed metrics using the `github.com/prometheus/client_golang/prometheus/promhttp` package.
 - **Metrics Usage Example**:
   The custom metric can be queried using the PromQL query `sort_desc(sum(product_retrieval_count{job="productcatalogservice"}) by(product_id, product_name))` to provide a nice table with the most retrieved products.
@@ -396,7 +411,7 @@ In the procedure of collecting more specific metrics, we encountered some predis
   - [Telegram Channel](https://t.me/+GpjvzfmIGZM4NTk0)
 - Non-meaningful alerts always fire at startup due to the absence of data.
 
-### **Dashboard**:
+### Dashboard
 
 Here are some screenshots of the Grafana dashboard showcasing the collected metrics:
 
@@ -501,33 +516,37 @@ Some other modifications were made to the original Dockerfile in order to simpli
 Canary releases were implemented using Istio's traffic management features, so some additional configurations were required.
 
 1. **Install Istio**:
-  1. Installed Istio with the default profile:
-    ```bash
-    istioctl manifest install --set profile=default
-    ```
-  2. Enabled sidecar injection for all pods in the `default` namespace (not necessary since we are focusing on the frontend microservice, but done for simplicity):
-    ```bash
-    kubectl label namespace default istio-injection=enabled
-    ```
+   1. Installed Istio with the default profile:
+
+      ```bash
+      istioctl manifest install --set profile=default
+      ```
+
+   2. Enabled sidecar injection for all pods in the `default` namespace (not necessary since we are focusing on the frontend microservice, but done for simplicity):
+
+      ```bash
+      kubectl label namespace default istio-injection=enabled
+      ```
+
 2. **Istio configurations**:
-  Canary releases drove the usage of Istio service mesh for entire lifetime of the application, so the `istio` folder contains the necessary configurations for the frontend service and its `Konfiguration` is always applied when applying the main deployment.
+   Canary releases drove the usage of Istio service mesh for entire lifetime of the application, so the `istio` folder contains the necessary configurations for the frontend service and its `Konfiguration` is always applied when applying the main deployment.
 
-  - **Gateway**: creates a new gateway for the frontend service exposing the requested port (80).
-  - **VirtualService**: defines the routing rules for the frontend service.
-  - **DestinationRule**: defines subsets for the frontend service.
+   - **Gateway**: creates a new gateway for the frontend service exposing the requested port (80).
+   - **VirtualService**: defines the routing rules for the frontend service.
+   - **DestinationRule**: defines subsets for the frontend service.
 
-  In the folder there are also 2 patches that remove the LoadBalancer service for the frontend and changes the load generator pointing IP to the Istio Gateway.
+   In the folder there are also 2 patches that remove the LoadBalancer service for the frontend and changes the load generator pointing IP to the Istio Gateway.
 
-  ```mermaid
-  flowchart TD
-    A[Gateway] --> B[VirtualService]
-    B --> C[Subset: v1<br>- Weight 75%]
-    B --> D[Subset: v2<br>- Weight 25%]
-    C --> E[Service v1<br>- Cluster IP]
-    D --> F[Service v2<br>- Cluster IP]
-    E --> G[Pods<br>- Labels:<br>version: v1]
-    F --> H[Pods<br>- Labels:<br>version: v2]
-  ```
+   ```mermaid
+   flowchart TD
+     A[Gateway] --> B[VirtualService]
+     B --> C[Subset: v1<br>- Weight 75%]
+     B --> D[Subset: v2<br>- Weight 25%]
+     C --> E[Service v1<br>- Cluster IP]
+     D --> F[Service v2<br>- Cluster IP]
+     E --> G[Pods<br>- Labels:<br>version: v1]
+     F --> H[Pods<br>- Labels:<br>version: v2]
+   ```
 
 Now the full application can be deployed with `kubectl apply -k .` in the root directory and it will be automatically injected with the sidecar.
 
@@ -537,6 +556,7 @@ Here the needed configurations are in the `static-split` folder.
 
 - The static split requires labeling `v1` and `v2` versions correctly in the Deployment configuration of the 2 services.
   The original version is annotated with `version: v1` and a the new *v2* version is deployed:
+
   ```bash
   kubectl patch deployment frontend --type=json -p='[
     {
@@ -548,7 +568,9 @@ Here the needed configurations are in the `static-split` folder.
 
   kubectl apply -f canary-version/static-split/frontend-v2.yaml
   ```
+
 - DestinationRule and VirtualService configurations need to be patched to reflect the new labels and relative subsets:
+
   ```bash
   kubectl patch destinationrule frontend --type=json -p='[
     {
@@ -604,14 +626,11 @@ Here the needed configurations are in the `static-split` folder.
 
 *The configuration above can be applied using `cat .\canary-version\static-split\deploy.run | pwsh -` or the equivalent command for the shell you are using.*
 
+- Deployed a static 75/25 split for the `frontend` service using the following command:
 
-
-
-   - Deployed a static 75/25 split for the `frontend` service using the following command:
-     ```bash
-     cat ./canary-version/static-split/deploy.run | pwsh -
-     ```
-
+  ```bash
+  cat ./canary-version/static-split/deploy.run | pwsh -
+  ```
 
 ##### Generating Traffic
 
@@ -668,27 +687,34 @@ When the rollout is managed by Flagger:
 To set up Flagger for canary releases, the following steps were followed:
 
 1. Applied Prometheus configuration from Istio's addon samples:
+
    ```bash
    kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.24/samples/addons/prometheus.yaml
    ```
-   This was chosen instead of our custom monitoring setup because it is easier to integrate with Istio and Flagger since they are already configurated to work with this implementation.
 
+   This was chosen instead of our custom monitoring setup because it is easier to integrate with Istio and Flagger since they are already configurated to work with this implementation.
 2. Installed Flagger with Istio support:
+
    ```bash
    kubectl apply -k github.com/fluxcd/flagger/kustomize/istio
    ```
 
 3. Configured Flagger Canary for the `frontend` service:
+
    ```bash
    kubectl apply -f ./canary-version/flagger-canary.yaml
    ```
+
    After this step, the `frontend-primary` pod is created, and the old `frontend` pod is deleted. The following command waits for the deletion of the old pod:
+
    ```bash
    kubectl wait --for=delete pod -l app=frontend --timeout=300s
    ```
+
    After this point we are ready to use Flagger.
 
 4. Triggered the canary deployment changing the frontend service deployment, in our case we change the image in order to test changes:
+
    ```bash
    kubectl set image deployment/frontend server=albertopasqualetto/oba-frontend:v2
    ```
@@ -778,6 +804,7 @@ Using the Flagger Canary configuration described above, in particular the `analy
 In order to simulate a rollback, we introduced a 3s latency for all the requests in the `v3` version of the `frontend` service except for the `_healthz` endpoint used to check the service's health and liveness by Kubernetes, otherwise the service wouldn't be started correctly by Kubernetes and would result in restarts and then termination.
 
 The relevant added line to the `main.go` file is:
+
 ```go
 r.Use(func(next http.Handler) http.Handler {
   return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -806,13 +833,13 @@ The trigger of canary deployment is as before with the command `kubectl set imag
 
 This is an output of the `kubectl describe canary/frontend` command:
 
-```
-  Normal   Synced  13m                   flagger  New revision detected! Scaling up frontend.default
-  Normal   Synced  12m                   flagger  Starting canary analysis for frontend.default
-  Normal   Synced  12m                   flagger  Advance frontend.default canary weight 10
-  Warning  Synced  2m52s (x10 over 11m)  flagger  Halt frontend.default advancement request duration 4.975s > 500ms
-  Warning  Synced  112s                  flagger  Rolling back frontend.default failed checks threshold reached 10
-  Warning  Synced  112s                  flagger  Canary failed! Scaling down frontend.default
+```text
+Normal   Synced  13m                   flagger  New revision detected! Scaling up frontend.default
+Normal   Synced  12m                   flagger  Starting canary analysis for frontend.default
+Normal   Synced  12m                   flagger  Advance frontend.default canary weight 10
+Warning  Synced  2m52s (x10 over 11m)  flagger  Halt frontend.default advancement request duration 4.975s > 500ms
+Warning  Synced  112s                  flagger  Rolling back frontend.default failed checks threshold reached 10
+Warning  Synced  112s                  flagger  Canary failed! Scaling down frontend.default
 ```
 
 From the output it can be seen that the deployment was rolled back because the request duration exceeded the threshold for 10 minutes.
@@ -914,7 +941,7 @@ This approach balances load effectively while minimizing latency.
 
 A problematic replica may process queries quickly by returning errors, making it seem less loaded. This behavior, known as **sinkholing**, can attract more traffic, exacerbating issues. Prequal avoids this using heuristic-based safeguards.
 
-### Performance Evaluation
+### Performance Comparison
 
 #### Observed Improvements
 

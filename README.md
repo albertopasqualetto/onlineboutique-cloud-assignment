@@ -18,6 +18,8 @@
 6. Apply conguration with `kubectl apply -k .`
 
 > [!IMPORTANT]
-> Don't forget get the credentials with `gcloud container clusters get-credentials onlineboutique`
+> Don't forget to get the credentials with `gcloud container clusters get-credentials onlineboutique`
 
 `kubectl debug -it <POD> --image=curlimages/curl -- /bin/sh` used for debugging with curl
+
+Report [here](./report.md).
