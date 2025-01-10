@@ -9,12 +9,12 @@ def plot_metrics_from_folder(folder_path):
     # Scroll through all files in the folder
     for file_name in os.listdir(folder_path):
         if file_name.endswith("_stats.csv"):
-           
+
             parts = file_name.split("vm")
             if len(parts) > 1 and ("usr" in parts[1] or "user" in parts[1]):
                 n_part, users_part = parts[0], parts[1]
                 n = int(n_part)
-                
+
                 # Handle both "usr" and "user" cases
                 if "usr" in users_part:
                     users = int(users_part.split("usr")[0])
@@ -64,7 +64,7 @@ def plot_metrics_from_folder(folder_path):
     ax1.set_ylabel("Response Time (ms)")
     ax1.set_xlabel("Configuration (#vm-#users)")
     ax1.set_xticks(range(len(data_df)))
-    ax1.set_xticklabels([f"{row['n']}vm-{row['users']}usr" for _, row in data_df.iterrows()], rotation=45)
+    ax1.set_xticklabels([f"{int(row['n'])}vm-{int(row['users'])}usr" for _, row in data_df.iterrows()], rotation=45)
     ax1.legend(loc="upper left")
     ax1.grid(True)
 

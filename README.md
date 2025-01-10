@@ -20,6 +20,9 @@
 > [!IMPORTANT]
 > Don't forget to get the credentials with `gcloud container clusters get-credentials onlineboutique`
 
+> [!NOTE]
+> Remember to pull the submodule.
+
 `kubectl debug -it <POD> --image=curlimages/curl -- /bin/sh` used for debugging with curl
 
-Report [here](./report.md).
+Report [here](./Report.md).
