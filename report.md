@@ -357,6 +357,7 @@ Beyond general resource consumption metrics, we implemented additional monitorin
   Tracked the number of "Placed Orders" using the PromQL query `sum(grpc_server_handled_total{instance=~"checkoutservice.*",grpc_method="PlaceOrder",grpc_code="OK"})`.
 
 ##### Custom Exporter
+
 - **Purpose**: Creating custom metrics permit to track specific application behaviors, here an example of a counter metric is implemented for the `productcatalogservice` to track product retrievals.
 - **Implementation**:
   - Developed using Golang libraries which simplify the process providing a high-level API.
@@ -383,6 +384,7 @@ In the procedure of collecting more specific metrics, we encountered some predis
 #### Raising Alerts
 
 ##### Alerting Configuration
+
 - Alerts were provisioned directly in Grafana.
 - Also Prometheus can deliver alerts, but we decided to use Grafana to keep everything in one place and leave Prometheus only for metrics collection.
 - Example Alerts:
@@ -395,7 +397,9 @@ In the procedure of collecting more specific metrics, we encountered some predis
 - Non-meaningful alerts always fire at startup due to the absence of data.
 
 ### **Dashboard**:
+
 Here are some screenshots of the Grafana dashboard showcasing the collected metrics:
+
 - **General Stats**:
   ![General Stats](images/grafana-general-stats.png)
 - **Shop Stats**:
@@ -413,198 +417,253 @@ Here are some screenshots of the Grafana dashboard showcasing the collected metr
 
 ## Performance Evaluation
 
-#### Overview
-
 Performance evaluation was conducted using **Locust** to generate traffic and monitor application behavior under different load conditions.
+All the necessary tecnologies were already deployed in the previous steps, so we just needed to adapt the code in `auto-deploy-loadgenerator` folder to run the tests with different configurations and on multiple machines.
+This code is in the `performance-evaluation` folder.
 
-#### Methodology
+### Methodology
 
-1. **Load Generators**:
-   - The default load generator deployed with the application (10 users) was active during all tests.
-   - Additional load generators were deployed for scaling experiments.
+- **Load Generators**:
+  - The default load generator deployed with the *`microservices-demo`* application (10 users) was still active during all tests.
+  - Additional load generators were deployed for scaling experiments.
 
-2. **Test Configurations**:
-   - **Infrastructure**:
-     - Single VM (`f1-micro`)
-     - Three VMs (`f1-micro`)
-     - Three VMs (`f1-micro`) + local PC
-   - **VM Configuration**:
-     - Used `boot_disk.initialize_params.image="debian-cloud/debian-12"` since Docker was not needed.
-   - **Traffic Patterns**:
-     - User quantities: 10, 100, 1000
-     - `spawn_rate`: Set to 10% of total users
-     - Duration: 3 minutes
+- **Test Configurations**:
+  - **Infrastructure**:
+    - Single VM (`f1-micro`)
+    - Three VMs (`f1-micro`)
+    - Three VMs (`f1-micro`) + local PC
+  - **VM Configuration**:
+    - Used `boot_disk.initialize_params.image="debian-cloud/debian-12"` since Docker was not needed, but a package manager was useful.
+  - **Traffic Patterns**:
+    - User quantities: 10, 100, 1000
+    - `spawn_rate`: Set to 10% of total users
+    - Duration: 3 minutes
 
-3. **Command**:
-   - Locust was executed with the following parameters:
-     ```bash
-     locust -f locustfile.py --headless --host http://<FRONTEND_ADDR> --users <USERS> \
-       --spawn-rate <SPAWN_RATE> --csv <CSV_NAME> --run-time <RUN_TIME>
-     ```
+### Execution
 
-4. **Distributed Load Testing**:
-   - **First Approach**:
-     - Used Ansible to deploy and manage Locust instances on three VMs.
-     - Command:
-       ```bash
-       ansible-playbook -i ./performance-evaluation/hosts ./performance-evaluation/setup_locust.yml \
-         --extra-vars "frontend_external_ip=$(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}') \
-         users=<USERS> spawn_rate=<SPAWN_RATE> csv_name=<CSV_NAME>"
-       ```
-   - **Second Approach**:
-     - Used [locust-swarm](https://github.com/SvenskaSpel/locust-swarm) for distributed load testing.
-     - Command:
-       ```bash
-       swarm -f microservices-demo/src/loadgenerator/locustfile.py --loadgen-list <LOADGEN_LIST> \
-         --host http://<FRONTEND_ADDR> --run-time <RUN_TIME> --users <USERS> --spawn-rate <SPAWN_RATE> --csv <CSV_NAME>
-       ```
-       - `LOADGEN_LIST`: Comma-separated list of IP addresses for deployed VMs.
-       - This method utilized the Locust master-slave architecture for true distributed load testing.
+Locust was executed with the following parameters:
+
+```bash
+locust -f locustfile.py --headless --host http://<FRONTEND_ADDR> --users <USERS> --spawn-rate <SPAWN_RATE> --csv <CSV_NAME> --run-time <RUN_TIME>
+```
+
+#### Distributed Load Testing
+
+**First Approach** (used in the 3VMs + local pc configuration):
+Used [locust-swarm](https://github.com/SvenskaSpel/locust-swarm) for distributed load testing.
+Command:
+
+```bash
+swarm -f microservices-demo/src/loadgenerator/locustfile.py --loadgen-list <LOADGEN_LIST> --host http://<FRONTEND_ADDR> --run-time <RUN_TIME> --users <USERS> --spawn-rate <SPAWN_RATE> --csv <CSV_NAME>
+```
+
+With `LOADGEN_LIST` the comma-separated list of IP addresses of the deployed VMs (collected in the `loadgenerator_ips` created by the Terraform script).
+This method automated the Locust master-slave architecture implementing a true distributed load testing. The master is the local PC.
+
+**Second Approach** (used in the 3VMs configuration):
+Used Ansible to deploy and manage Locust instances on three VMs parallely and then collecting data together.
+Command:
+
+```bash
+ansible-playbook -i ./performance-evaluation/hosts ./performance-evaluation/setup_locust.yml --extra-vars "frontend_external_ip=$(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}') users=<USERS> spawn_rate=<SPAWN_RATE> csv_name=<CSV_NAME>"
+```
+
+Two approaches for distributed load testing were used since the first one had a really high request failure rate, so we decided to try another one to see if the problem was in the tool; in the end the problem was not in the tool.
 
 #### Results Analysis
 
-1. **CSV Outputs**:
-   - The results were monitored and collected via Locust's CSV output files.
+The results were monitored and collected via Locust's CSV output files and then analyzed using a custom script (`analysis.py`) to generate performance plots.
 
-2. **Visualization**:
-   - Analyzed using a custom script (`analysis.py`) to generate performance plots.
-     - Example Plot:
-       ![Performance Evaluation Plot](./performance-evaluation/plot.png)
+![Performance Evaluation Plot](images/performance-evaluation-plot.png)
 
 ## Canary Release
 
-We deployed a Canary Release strategy to introduce a new version of the microservice `frontend`. This strategy ensures a gradual and safe transition from `v1` to `v2` of the service while monitoring system performance and user experience.
+We deployed a Canary Release strategy to introduce a new version of the microservice `frontend`. This strategy ensures a gradual and safe transition from the original version to a new one of the service while monitoring system performance and user experience.
+The transition is performed enforcing the use of a load balancer (Istio's service mesh) to split traffic between the two versions without having disruptions in the service.
 
-### Steps
+Files are in the `canary-release` folder.
 
-#### Dockerfile Version
+### Mandatory Part
 
-We created new Docker images (`albertopasqualetto/oba-frontend:v2`, `albertopasqualetto/oba-frontend:v3`) with small differences between each version.
+#### v2 Docker Image
 
-#### 75/25 Traffic Split
+We created a new Docker image: `albertopasqualetto/oba-frontend:v2` with only a small change: an additional endpoint `/v2.txt` to differentiate between versions.
+In the folder there is the `frontend-v2.Dockerfile` used to build the image, the differentiation is applied through oneline sed command which adds the endpoint to the router of the `main.go` file.
 
+```Dockerfile
+RUN sed -i '/r := mux.NewRouter()/a\\tr.HandleFunc(baseUrl + "/v2.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "THIS IS VERSION v2") })' main.go
+```
+
+Some other modifications were made to the original Dockerfile in order to simplify the process of building the image.
+
+#### Istio Configuration
+
+Canary releases were implemented using Istio's traffic management features, so some additional configurations were required.
 
 1. **Install Istio**:
-   - Installed Istio with the default profile:
-     ```bash
-     istioctl manifest install --set profile=default
-     ```
-   - Enabled sidecar injection for all pods in the `default` namespace:
-     ```bash
-     kubectl label namespace default istio-injection=enabled
-     ```
+  1. Installed Istio with the default profile:
+    ```bash
+    istioctl manifest install --set profile=default
+    ```
+  2. Enabled sidecar injection for all pods in the `default` namespace (not necessary since we are focusing on the frontend microservice, but done for simplicity):
+    ```bash
+    kubectl label namespace default istio-injection=enabled
+    ```
+2. **Istio configurations**:
+  Canary releases drove the usage of Istio service mesh for entire lifetime of the application, so the `istio` folder contains the necessary configurations for the frontend service and its `Konfiguration` is always applied when applying the main deployment.
 
-2. **Deploy Initial Application**:
-   - Deployed the initial `frontend` application with the necessary configurations for the traffic split:
-     ```bash
-     kubectl apply -k .
-     ```
+  - **Gateway**: creates a new gateway for the frontend service exposing the requested port (80).
+  - **VirtualService**: defines the routing rules for the frontend service.
+  - **DestinationRule**: defines subsets for the frontend service.
 
-3. **Static Traffic Split Configuration**:
+  In the folder there are also 2 patches that remove the LoadBalancer service for the frontend and changes the load generator pointing IP to the Istio Gateway.
+
+  ```mermaid
+  flowchart TD
+    A[Gateway] --> B[VirtualService]
+    B --> C[Subset: v1<br>- Weight 75%]
+    B --> D[Subset: v2<br>- Weight 25%]
+    C --> E[Service v1<br>- Cluster IP]
+    D --> F[Service v2<br>- Cluster IP]
+    E --> G[Pods<br>- Labels:<br>version: v1]
+    F --> H[Pods<br>- Labels:<br>version: v2]
+  ```
+
+Now the full application can be deployed with `kubectl apply -k .` in the root directory and it will be automatically injected with the sidecar.
+
+#### 75/25 Static Traffic Split
+
+Here the needed configurations are in the `static-split` folder.
+
+- The static split requires labeling `v1` and `v2` versions correctly in the Deployment configuration of the 2 services.
+  The original version is annotated with `version: v1` and a the new *v2* version is deployed:
+  ```bash
+  kubectl patch deployment frontend --type=json -p='[
+    {
+      "op": "add",
+      "path": "/spec/template/metadata/labels/version",
+      "value": "v1"
+    }
+  ]'
+
+  kubectl apply -f canary-version/static-split/frontend-v2.yaml
+  ```
+- DestinationRule and VirtualService configurations need to be patched to reflect the new labels and relative subsets:
+  ```bash
+  kubectl patch destinationrule frontend --type=json -p='[
+    {
+      "op": "replace",
+      "path": "/spec",
+      "value": {
+        "host": "frontend",
+        "subsets": [
+          {
+            "name": "v1",
+            "labels": {
+              "version": "v1"
+            }
+          },
+          {
+            "name": "v2",
+            "labels": {
+              "version": "v2"
+            }
+          }
+        ]
+      }
+    }
+  ]'
+
+  kubectl patch virtualservice frontend --type=json -p='[
+    {
+      "op": "replace",
+      "path": "/spec/http/0",
+      "value": {
+        "route": [
+          {
+            "destination": {
+              "host": "frontend",
+              "subset": "v1"
+            },
+            "weight": 75
+          },
+          {
+            "destination": {
+              "host": "frontend",
+              "subset": "v2"
+            },
+            "weight": 25
+          }
+        ]
+      }
+    }
+  ]'
+  ```
+
+  Note that split ratio (in our case 75% for v1 and 25% for v2) is defined in the `weight` field of the `route` in the `VirtualService`.
+
+*The configuration above can be applied using `cat .\canary-version\static-split\deploy.run | pwsh -` or the equivalent command for the shell you are using.*
+
+
+
+
    - Deployed a static 75/25 split for the `frontend` service using the following command:
      ```bash
      cat ./canary-version/static-split/deploy.run | pwsh -
      ```
-     - The static split requires labeling `v1` and `v2` versions correctly in the deployment configuration.
-
-4. **Traffic Distribution**:
-   - Configured Istio’s `VirtualService` and `DestinationRule` to direct 75% of the traffic to `v1` and 25% to `v2`.
-
-#### Deploying Frontend Versions
-
-- **Deploy Primary Frontend Version:**
-
-  ```bash
-  kubectl apply -k .
-  ```
-
-- **Deploy Frontend v2:**
-
-  ```bash
-  kubectl apply -f ./canary-version/frontend-v2
-  ```
-
-#### 6. Configuring Istio
-
-- **Istio Gateway Configuration:**
-
-  ```bash
-  kubectl apply -f gateway.yaml
-  ```
-
-- **VirtualService Configuration:**
-  
-  Configured to split traffic, with 75% routed to `v1` and 25% routed to `v2` initially:
-
-  ```bash
-  kubectl apply -f ./canary-release/frontend-virtualservice.yaml
-  ```
-
-- **DestinationRule Configuration:**
-
-  Defined subsets for `v1` and `v2` using appropriate labels:
-
-  ```bash
-  kubectl apply -f ./canary-release/frontend-destinationrule.yaml
-  ```
-
-#### 7. Generating Traffic
-
-We used Locust to generate traffic and test the Canary Release deployment.
-
-- **Locustfile:**
-
-  ```python
-  from locust import HttpUser, task, between
-
-  class FrontendUser(HttpUser):
-      host = "http://34.27.165.38"
-      wait_time = between(1, 5)
-
-      @task
-      def index(self):
-          self.client.get("/")
-
-      @task(2)
-      def product_page(self):
-          self.client.get("/product/OLJCESPC7Z")
-  ```
-
-- **Using Locust Interface:**
-
-  In the Locust interface, we set the number of users to generate requests per second and monitored the system’s performance.
-
-  ![Locust Interface](./images/locust-interface.png)
-
-- **Monitoring with Prometheus and Grafana:**
-
-  We analyzed traffic and performance metrics using Prometheus queries and Grafana dashboards.
-  ##### Results
-
-- **Traffic Generation with Locust:**
-
-  Traffic was generated correctly, as shown in the Locust interface:
-
-  ![Requests](./images/requests.png)
-
-- **Prometheus Metrics:**
-
-  Queries showed the expected traffic distribution:
-
-  ![Prometheus Query](./images/prom-perc-query.png)
-
-- **Grafana Dashboard:**
-
-  The plotted data demonstrated the performance of both versions:
-
-  ![Grafana Plot](./images/grafana-plot.png)
-
-#### 8. Automating the Canary Release with Flagger
 
 
-# Canary Releases with Flagger
+##### Generating Traffic
 
-## Flagger Configuration
+We used Locust toghether with a simple locustfile.py to generate traffic and test the Canary Release deployment split effectiveness.
+
+`Locustfile`:
+
+```python
+from locust import HttpUser, task, between
+
+class FrontendUser(HttpUser):
+    host = "http://34.27.165.38"
+    wait_time = between(1, 5)
+
+    @task
+    def index(self):
+        self.client.get("/")
+
+    @task(2)
+    def product_page(self):
+        self.client.get("/product/OLJCESPC7Z")
+```
+
+**Using Locust Interface:**
+
+In the Locust interface, we set the number of users to generate requests per second and monitored the system’s performance.
+
+![Locust Interface](./images/locust-interface.png)
+
+###### Verifying with Prometheus and Grafana
+
+We analyzed traffic and performance metrics using Prometheus queries and Grafana dashboards.
+
+Traffic was generated and delivered correctly, as shown in the Locust interface:
+
+![Requests](./images/requests-work-prometheus-canary-static.png)
+
+PromQL Query `sum(istio_requests_total) by (destination_workload)` showed the expected traffic distribution:
+
+![Prometheus Query](./images/query-prometheus-canary-static.png)
+
+![Grafana Plot](./images/plot-grafana-canary-static.png)
+
+#### Automating the Canary Release with Flagger
+
+Flagger manages automatically the canary release process, ensuring a smooth transition based on defined metrics and thresholds.
+When the rollout is managed by Flagger:
+
+- The canary version is progressively deployed to an increasing percentage of requests.
+- If no traffic is detected, the canary deployment is paused until requests are received. Since the loadbalancer has been patched to send requests to Istio gateway, the canary deployment can progress smoothly. If there was no traffic, some artificial one could be generated using a `load-test` webhook in the Canary resource configuration.
+
+##### Flagger Configuration
 
 To set up Flagger for canary releases, the following steps were followed:
 
@@ -612,7 +671,7 @@ To set up Flagger for canary releases, the following steps were followed:
    ```bash
    kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.24/samples/addons/prometheus.yaml
    ```
-   This was chosen instead of the custom monitoring setup because it is easier to use and already includes the necessary configurations for integration with Flagger.
+   This was chosen instead of our custom monitoring setup because it is easier to integrate with Istio and Flagger since they are already configurated to work with this implementation.
 
 2. Installed Flagger with Istio support:
    ```bash
@@ -623,48 +682,20 @@ To set up Flagger for canary releases, the following steps were followed:
    ```bash
    kubectl apply -f ./canary-version/flagger-canary.yaml
    ```
-   After this step, the `frontend-primary` pod is created, and the old `frontend` pod is deleted. The following command ensures the deletion of the old pod:
+   After this step, the `frontend-primary` pod is created, and the old `frontend` pod is deleted. The following command waits for the deletion of the old pod:
    ```bash
    kubectl wait --for=delete pod -l app=frontend --timeout=300s
    ```
+   After this point we are ready to use Flagger.
 
-4. Triggered the canary deployment:
+4. Triggered the canary deployment changing the frontend service deployment, in our case we change the image in order to test changes:
    ```bash
    kubectl set image deployment/frontend server=albertopasqualetto/oba-frontend:v2
    ```
-   - The new version (`v2`) of the `frontend` includes an additional endpoint `/v2.txt` to distinguish between versions.
-   - The corresponding Dockerfile is located in the `canary` folder.
-
----
-
-## Progress Monitoring
-
-To monitor the canary deployment's progress, use:
-```bash
-kubectl describe canary/frontend
-```
-
-### Additional Visualization
-- A useful dashboard for Istio and Flagger:
-  ```bash
-  kubectl apply -f https://raw.githubusercontent.com/istio/istio/refs/heads/release-1.24/samples/addons/kiali.yaml
-  kubectl rollout status deployment/kiali -n istio-system
-  istioctl dashboard kiali
-  ```
-
----
-
-## Behavior of Automatic Rollouts with Flagger
-
-When the rollout is managed by Flagger:
-- The canary version is progressively deployed to an increasing percentage of requests.
-- If no traffic is detected, the canary deployment is paused until requests are received.
-
----
-
-This setup ensures smooth and controlled canary releases while providing real-time monitoring and progress tracking through Flagger and Istio dashboards.
 
 - **Flagger Canary Configuration:**
+
+Here is the configuration used for the `frontend` service canary deployment, it selects the deployment to be canaried and defines the analysis metrics and thresholds:
 
   ```yaml
   apiVersion: flagger.app/v1beta1
@@ -678,31 +709,75 @@ This setup ensures smooth and controlled canary releases while providing real-ti
       apiVersion: apps/v1
       kind: Deployment
       name: frontend
+    progressDeadlineSeconds: 60
     service:
       port: 80
+      targetPort: 8080  # container port number
+      gateways:
+      - frontend-gateway
       hosts:
-        - "*"
+      - "*"
     analysis:
       interval: 1m
       threshold: 10
       maxWeight: 50
       stepWeight: 10
       metrics:
-        - name: request-success-rate
-          threshold: 99
-        - name: request-duration
-          threshold: 500
+      - name: request-success-rate
+        thresholdRange:
+          min: 99
+        interval: 1m
+      - name: request-duration
+        thresholdRange:
+          max: 500
+        interval: 30s
   ```
 
-## Bonus part: Automated Rollback of Canary Release
+##### Progress Monitoring
+
+To monitor the canary deployment's progress, use:
+
+```bash
+kubectl describe canary/frontend
+```
+
+Example output of successful canary deployment:
+
+```text
+New revision detected frontend.default
+Scaling up frontend.default
+Waiting for frontend.default rollout to finish: 0 of 1 updated replicas are available
+Advance frontend.default canary weight 10
+Advance frontend.default canary weight 20
+Advance frontend.default canary weight 30
+Advance frontend.default canary weight 40
+Advance frontend.default canary weight 50
+Copying frontend.default template spec to frontend-primary.default
+Waiting for frontend-primary.default rollout to finish: 1 of 2 updated replicas are available
+Promotion completed! Scaling down frontend.default
+```
+
+A useful dashboard visualization is Kiali, which provides a graphical representation of the service mesh and traffic flow:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/refs/heads/release-1.24/samples/addons/kiali.yaml
+kubectl rollout status deployment/kiali -n istio-system
+istioctl dashboard kiali
+```
+
+Kiali Dashboard during the canary deployment through Flagger:
+
+![Kiali Dashboard](./images/kiali-while-flagger-rollout.png)
+
+### Bonus Part: Automated Rollback of Canary Release
 
 Using the Flagger Canary configuration described above, in particular the `analysis` section, Flagger automatically detects issues based on the defined metrics thresholds. When an issue is detected, Flagger initiates an automated rollback to the previous version.
 
 ### Rollback Process
 
-In order to simulate a rollback, we introduced a 3s latency for all the requests in the `v3` version of the `frontend` service except for the `_healthz` endpoint used to check the service's health and liveness by Kubernetes, otherwise the service wouldn't start correctly.
+In order to simulate a rollback, we introduced a 3s latency for all the requests in the `v3` version of the `frontend` service except for the `_healthz` endpoint used to check the service's health and liveness by Kubernetes, otherwise the service wouldn't be started correctly by Kubernetes and would result in restarts and then termination.
 
-The relevant added line:
+The relevant added line to the `main.go` file is:
 ```go
 r.Use(func(next http.Handler) http.Handler {
   return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -711,11 +786,10 @@ r.Use(func(next http.Handler) http.Handler {
   })
 })
 ```
-```
 
-The actual implementation can be seen in the `canary-version/frontend-v3.Dockerfile` file.
+The actual implementation can be seen in the `canary-version/frontend-v3.Dockerfile` file and is performed again using some `sed` commands
 
-To perform rollback some metrics thresholds need to be present in the *Canary* resource configuration, this is the relvant part:
+To perform rollback some metrics thresholds need to be present in the *Canary* resource configuration, this is the relvant part for us since we are interested in the request duration:
 
 ```yaml
     analysis:
@@ -742,3 +816,168 @@ This is an output of the `kubectl describe canary/frontend` command:
 ```
 
 From the output it can be seen that the deployment was rolled back because the request duration exceeded the threshold for 10 minutes.
+
+## Review of recent publications: "Load is not what you should balance: Introducing Prequal"
+
+### Prequal
+
+This paper presents **Prequal**, a load balancer for distributed multi-tenant systems aimed at minimizing real-time request latency. Unlike traditional systems that focus on equalizing CPU utilization across servers, Prequal uses **Requests-In-Flight (RIF)** and **latency** as its primary metrics to dynamically assign workloads. Prequal applies the **Power of d Choices paradigm (PodC)** to optimize server selection.
+
+#### Innovations
+
+1. Combines **RIF** and **latency** using the **hot-cold lexicographic rule (HCL)**.
+2. Introduces a novel **asynchronous probing mechanism**, which reduces overhead while maintaining fresh probing signals.
+
+#### Deployment Success
+
+Prequal has been successfully deployed in real-world systems such as **YouTube**, achieving significant reductions in:
+
+- Tail latency.
+- Resource utilization.
+
+### Weighted Round Robin (WRR)
+
+The authors explore the operational environment of large-scale services like **YouTube**, comprising a network of jobs issuing millions of queries to distributed replicas.
+They show that traditional load balancers like **Weighted Round Robin (WRR)** are insufficient for such systems, as they fail to account for the complexities of distributed systems and Prequal is proposed as a solution.
+
+#### How WRR Works
+
+**Weighted Round Robin (WRR)** uses smoothed historical statistics for each replica to periodically compute weights. These include:
+
+- **Goodput** (successful query rate).
+- **CPU utilization**.
+- **Error rate**.
+
+The weight for each replica, \( w_i \), is calculated as:
+
+\[
+w_i = \frac{q_i}{u_i}
+\]
+
+Where:
+
+- \( q_i \): Queries per second (QPS) for replica \( i \).
+- \( u_i \): CPU utilization of replica \( i \).
+
+#### Limitation of WRR
+
+While WRR performs well if all replicas stay within their CPU allocations, overload is common and occurs even at small timescales. In such cases, WRR fails to handle the complexities of distributed systems, particularly under high-load spikes, leading to:
+
+- Increased tail latencies.
+- Service-level objective (SLO) violations.
+
+### System Design
+
+Prequal dynamically adjusts load balancing by combining two key signals:
+
+1. **Requests-In-Flight (RIF)**.
+2. **Latency**.
+
+#### Probing Rate
+
+Prequal issues a specified number of probes (\( r_{\text{probe}} \)) triggered by each query. More probes may be issued after a maximum idle time. The **probing rate** is linked to the **query rate**, ensuring up-to-date information while minimizing redundant probes.
+
+Probing targets are sampled randomly from available replicas to avoid the **thundering herd phenomenon**, where multiple clients inundate a single replica with low latency, leading to queuing and increased delays.
+
+#### Load Signals
+
+When responding to a probe:
+
+- **RIF**: Checked from the counter, providing an instantaneous signal.
+- **Latency**: Estimated from recently completed queries. The median latency for recent queries with similar RIF values is returned.
+
+#### Probe Pool
+
+Prequal maintains a **probe pool** containing responses for selecting replicas. Key features:
+
+- Maximum size is capped (e.g., 16, as this proved optimal).
+- Probes are replaced based on age and relevance to ensure freshness.
+
+#### Replica Selection
+
+Prequal uses the **Hot-Cold Lexicographic (HCL) Rule**:
+
+- **Hot** replicas: RIF exceeds a quantile threshold \( Q_{\text{RIF}} \).
+- **Cold** replicas: RIF below \( Q_{\text{RIF}} \).
+
+**Selection logic**:
+
+1. If all replicas are hot, select the one with the lowest RIF.
+2. If at least one is cold, select the cold replica with the lowest latency.
+3. If the pool is empty, fallback to a random selection.
+
+This approach balances load effectively while minimizing latency.
+
+### Error Handling
+
+#### Sinkholing Prevention
+
+A problematic replica may process queries quickly by returning errors, making it seem less loaded. This behavior, known as **sinkholing**, can attract more traffic, exacerbating issues. Prequal avoids this using heuristic-based safeguards.
+
+### Performance Evaluation
+
+#### Observed Improvements
+
+Prequal consistently outperformed WRR in both real-world deployments (e.g., YouTube) and test environments:
+
+- **2x reduction** in tail latency and CPU utilization.
+- **5–10x reduction** in tail RIF.
+- **10–20% reduction** in memory usage.
+- Near-elimination of errors due to load imbalances.
+
+#### Robustness
+
+Prequal proved beneficial regardless of whether other services in the network used it. It works efficiently across diverse job types and query processing requirements (e.g., CPU, RAM, latency).
+
+### Key Innovations of Prequal
+
+1. **Asynchronous Probing**: Ensures real-time updates without impacting query processing.
+2. **Hot-Cold Lexicographic Rule**: Balances the trade-off between load and latency.
+3. **Error Aversion**: Safeguards against issues like sinkholing.
+4. **Optimized Resource Usage**: Reduces tail latencies and overhead while enabling higher utilization.
+
+### Canary Release and load balancer
+
+The load balancer is stright related to the Canary Release that we had to build during the project.
+
+A canary release is a deployment strategy where a new version of an application or service is gradually rolled out to a subset of users before a full-scale release.
+
+In our example, we introduced a new version of the frontend service. Initially, we configured the load balancer with static weights to gradually route traffic between versions. Later, we automated this process using Flagger.
+
+We monitored the results through the load balancer, which allowed us to collect metrics for comparison. In the event of errors or degraded performance, the load balancer facilitated an automatic rollback to ensure system stability.
+
+The load balancer is central to implementing a canary release:
+
+- The load balancer splits incoming traffic between the existing version and the new version  of the application.
+  - For example in our case, 75% of traffic might go to the stable version (V1), while 25% is routed to the new version (V2) of the frontend.
+
+- The load balancer allows you to monitor the performance of the new version in real-time by isolating the subset of traffic it handles.
+If issues are detected in the canary deployment, the load balancer can instantly stop routing traffic to the new version, reverting all traffic to the stable version.
+
+- As confidence in the new version grows, the load balancer can progressively increase the proportion of traffic routed to the canary version until it eventually serves 100% of the traffic. As we did with Flugger in our example.
+
+More specifically in our approach Istio's Ingress Gateway was used as a load balancer to route traffic between the two versions of the frontend service. The Istio Gateway and VirtualService resources were configured to split traffic between the two versions declared in DestinationRule resources based on the weight assigned to each; Flagger operates automatically generating the cited resources.
+
+#### Future Works taking inspiration from Prequal
+
+Prequal system may be implemented in the load balancer which selects which release (primary or canary) to distribute at each request, but since the release of a canary version is rare, the improvements could not be so noticeable.
+
+Instead, Prequal dynamics can be implemented with more effectiveness in the load balancing system used to manage more pods hosting the same microservice version managed by HorizonalPodAutoscaler in Kubernetes.
+
+##### Leveraging Prequal for Autoscaling in Kubernetes
+
+Traditional Kubernetes autoscaling relies on metrics such as CPU and memory utilization. However, these metrics may not capture key load signals for applications that must respond to real-time traffic spikes. By utilizing signals provided by Prequal, such as Requests-in-Flight (RIF) and estimated latency, we can design a more responsive and optimized auto scaling system tailored for the project.
+
+###### Development Plan
+
+1. Prometheus Configuration:
+        Set up Prometheus to collect Prequal signals such as the number of Requests-in-Flight and estimated latency.
+
+2. Horizontal Pod Autoscaler (HPA):
+        Configure the HPA to respond to custom metrics based on Prequal signals.
+
+3. Load Variation Monitoring:
+        Observe how the HPA responds to changes in load and traffic patterns.
+
+4. Performance Analysis:
+        Evaluate the effectiveness of the implementation and identify potential improvements.
