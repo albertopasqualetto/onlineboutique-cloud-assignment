@@ -267,7 +267,12 @@ To visualize the metrics collected by Prometheus:
       - configMapGenerator (!!) in kustomization.yaml
   - OBA Dashboard
     - show main metrics (cite them)
-    - put some screenshots
+    ![grafana general stats](./monitoring/grafana-charts/grafana-shop-stats.png)
+    ![grafana shop stats](./monitoring/grafana-charts/grafana-general-stats.png)
+    ![grafana node stats](./monitoring/grafana-charts/grafana-node-stats.png)
+    ![grafana pod stats](./monitoring/grafana-charts/grafana-pod-stats.png)
+    ![grafana redis cart](./monitoring/grafana-charts/grafana-shop-stats.png)
+    
     - took inspiration from:
       - 1860 node-exporter
       - 13946 cAdvisor
