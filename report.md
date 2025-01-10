@@ -1,23 +1,21 @@
-# The Report
+# Report
+
+*Authors: Alberto Pasqualetto, Matteo Ciccone*
 
 Every command is to be run from the root of the repository.
 
 ## Deploying the original application in GKE
 
-We created the cluster from GKE dashboard, choosing the standard configuration (zone, cluster name, node count ...).
+We created the cluster from GKE dashboard, choosing the standard configuration (zone, cluster name, node count, ...).
 
 Then we cloned the repository;
  and we connected to the cluster with `gcloud container clusters get-credentials onlineboutique`
 
-`kubectl apply -f ./release/kubernetes-manifests.yaml`
+Finally we deployed the application with `kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/refs/heads/main/release/kubernetes-manifests.yaml` retrieving it directly from the original repository.
 
-We verified the deployment was succesfull obtaining the ip address of the frontends load balancer with `kubectl get services frontend-external` and throw output of the load generator with `kubectl logs <LOADGENERATOR_POD_NAME>`.
+We verified the deployment was succesful obtaining the ip address of the frontend's load balancer with `kubectl get services frontend-external` and reading the output of the load generator with `kubectl logs <LOADGENERATOR_POD_NAME>`.
 
-Explain the Autopilot mode.
-
-## Analyzing the provided configuration
-
-# Autopilot
+### Autopilot mode
 
 **Autopilot** is a GKE operation mode where Google manages the cluster configuration, including:
 - Nodes
@@ -31,9 +29,7 @@ According to the [Autopilot vs Standard Feature Comparison](https://cloud.google
 
 This hides cluster configuration details from the user, addressing issues like low resource allocation often seen in GKE's standard mode.
 
----
-
-# Configuration Explanation
+## Analyzing the provided configuration
 
 The `kubernetes-manifests.yaml` file defines configurations for all Online Boutique services. For each service, it includes:
 - A **`Deployment`**
@@ -42,7 +38,7 @@ The `kubernetes-manifests.yaml` file defines configurations for all Online Bouti
 
 ### Frontend Service Example
 
-Here is an example configuration for the **frontend service**:
+Here is an the extract of the configuration regarding the **frontend service**:
 
 ```yaml
 ---
@@ -145,59 +141,54 @@ metadata:
 ---
 ```
 
----
+#### Explanation of Key Fields
 
-## Explanation of Key Fields
-
-### Common Fields
+##### Common Fields
 - **`apiVersion`**: The API version for the object.
 - **`kind`**: The type of Kubernetes object (e.g., `Deployment`, `Service`, `ServiceAccount`).
-- **`metadata`**: Contains the object's name and labels.
+- **`metadata`**: Contains the object's name and labels; in this piece of manifest all objects have "frontend" name except one service with "frontend-external" name and all objects have "app: frontend" label.
 
----
-
-### Deployment Specification
+##### Deployment Specification (`spec`)
 - **`selector.matchLabels.app: frontend`**: Matches pods managed by this deployment.
 - **`template`**:
-  - **`metadata.labels.app: frontend`**: Labels the pods for this deployment.
-  - **`annotations.sidecar.istio.io/rewriteAppHTTPProbers: "true"`**: Ensures Istio rewrites readiness and liveness probes.
-  - **`spec.serviceAccountName: frontend`**: Associates the deployment with the `frontend` ServiceAccount.
-  - **`securityContext`**: Configures security settings for the pod:
-    - **`fsGroup`, `runAsGroup`, `runAsUser`**: Ensures non-root execution with specific user/group IDs.
-    - **`runAsNonRoot: true`**: Enforces that the container runs as a non-root user.
-  - **`containers`**:
-    - **`securityContext`**: Hardens container security:
-      - **`allowPrivilegeEscalation: false`**: Prevents privilege escalation.
-      - **`capabilities.drop: [ALL]`**: Drops all POSIX capabilities.
-      - **`privileged: false`**: Runs the container in a non-privileged mode.
-      - **`readOnlyRootFilesystem: true`**: Makes the filesystem read-only.
-    - **`image`**: Specifies the container image to use.
-    - **`ports.containerPort: 8080`**: Exposes port 8080 inside the pod.
-    - **`readinessProbe`**: Configures readiness checks:
-      - HTTP GET request to `/_healthz` on port 8080.
+  - **`metadata`**:
+    - **`labels.app: frontend`**: Labels the pods for this deployment, it is the name of the app.
+    - **`annotations.sidecar.istio.io/rewriteAppHTTPProbers: "true"`**: Ensures a possible Istio instance (a sidecar software which provides observability, traffic management and security) to rewrite readiness and liveness probes to be redirected through it.
+  - **`spec`**:
+    - **`serviceAccountName: frontend`**: Associates the deployment with the `frontend` ServiceAccount.
+    - **`securityContext`**: Configures security settings for the pod:
+      - **`fsGroup`, `runAsGroup`, `runAsUser`**: Ensures non-root execution with specific user/group IDs.
+      - **`runAsNonRoot: true`**: Enforces that the container runs as a non-root user.
+    - **`containers`**: Defines the list of containers in the pod, "`server`" is the only one in this case.
+      - **`securityContext`**: Hardens container security:
+        - **`allowPrivilegeEscalation: false`**: Prevents privilege escalation.
+        - **`capabilities.drop: [ALL]`**: Drops all POSIX [capabilities](https://man.archlinux.org/man/capabilities.7) (related to a fine-grained "superuser" permissions system).
+        - **`privileged: false`**: Runs the container in a non-privileged mode.
+        - **`readOnlyRootFilesystem: true`**: Makes the filesystem read-only (container is stateless).
+      - **`image`**: Specifies the container image to use.
+      - **`ports.containerPort: 8080`**: Exposes port 8080 inside the pod.
+    - **`readinessProbe`**: Configures readiness checks, used to indicate when the pod is ready to serve traffic, the container will not receive requests while it is not ready.:
+      - HTTP GET request (`httpGet`) to `/_healthz` (`path`) on port 8080 (`port`) with header `Cookie: shop_session-id=x-readiness-probe`.
     - **`livenessProbe`**: Configures liveness checks:
-      - Similar to readiness checks but for container health.
+      - Similar to readiness checks but checks if the container is alive, otherwise it is restarted.
+    - **`env`**: Defines environment variables for the container.
     - **`resources`**: Defines resource requests and limits:
       - CPU: `100m` (min), `200m` (max).
       - Memory: `64Mi` (min), `128Mi` (max).
 
----
-
-### Service Specifications
-1. **Frontend Service (`ClusterIP`)**:
+##### Service Specifications (`spec`)
+- **Frontend Service (`ClusterIP`)**:
    - **`type: ClusterIP`**: Exposes the service within the cluster.
-   - **`selector.app: frontend`**: Routes traffic to pods with matching labels.
-   - **`ports`**: Maps external port 80 to internal port 8080.
+   - **`selector.app: frontend`**: Routes traffic to pods with matching labels; in this case the previously defined deployment.
+   - **`ports`**: Maps external port 80 to internal port 8080 with the name "http".
 
-2. **Frontend External Service (`LoadBalancer`)**:
-   - **`type: LoadBalancer`**: Exposes the service externally with a public IP.
-   - **`selector.app: frontend`**: Routes traffic to pods with matching labels.
-   - **`ports`**: Maps external port 80 to internal port 8080.
+- **Frontend External Service (`LoadBalancer`)**:
+   - **`type: LoadBalancer`**: Exposes the service externally with a public IP through a requested load balancer (GCP provides one automatically).
+   - **`selector.app: frontend`**: Routes traffic to pods with matching labels; in this case the previously defined deployment.
+   - **`ports`**: Maps external port 80 to internal port 8080 with the name "http".
 
----
-
-### ServiceAccount
-- A **`ServiceAccount`** represents a non-human Kubernetes user, providing a distinct identity for interactions.
+##### ServiceAccount
+A **`ServiceAccount`** represents a non-human Kubernetes user, providing a distinct identity for interactions, here it has no `spec` definition.
 
 ## Deploying the load generator on a local machine
 
