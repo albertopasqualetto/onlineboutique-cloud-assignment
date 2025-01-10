@@ -144,7 +144,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max(node_time_seconds - node_boot_time_seconds) by(node, job)",
+          "expr": "max(node_time_seconds - node_boot_time_seconds)",
           "instant": true,
           "intervalFactor": 1,
           "range": false,
@@ -244,7 +244,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "100 * (avg(1 - rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) by (instance))",
+          "expr": "100 * (avg(1 - rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
           "hide": false,
           "instant": true,
           "intervalFactor": 1,
@@ -324,7 +324,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "(1 - avg(node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) by(instance, job)) * 100",
+          "expr": "(1 - avg(node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
           "format": "time_series",
           "hide": false,
           "instant": true,
@@ -399,7 +399,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(irate(node_disk_read_bytes_total[5m])*8)",
+          "expr": "sum(irate(node_disk_read_bytes_total[5m]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -470,7 +470,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(irate(node_network_receive_bytes_total[5m])*8)",
+          "expr": "sum(irate(node_network_receive_bytes_total[5m]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -541,7 +541,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(irate(node_disk_written_bytes_total[5m])*8)",
+          "expr": "sum(irate(node_disk_written_bytes_total[5m]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -612,7 +612,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(irate(node_network_transmit_bytes_total[5m])*8)",
+          "expr": "sum(irate(node_network_transmit_bytes_total[5m]))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -792,7 +792,7 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "Shows the number of times a specific product has been visualized (retrieved from productcatalogservice), never retrieved products are not visualized",
+      "description": "Shows the number of times a specific product has been visualized (retrieved from productcatalogservice); never retrieved products are not visualized",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -945,7 +945,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 15
+            "y": 16
           },
           "id": 6,
           "options": {
@@ -1052,7 +1052,7 @@
             "h": 8,
             "w": 6,
             "x": 12,
-            "y": 15
+            "y": 16
           },
           "id": 7,
           "options": {
@@ -1208,7 +1208,7 @@
             "h": 8,
             "w": 6,
             "x": 18,
-            "y": 15
+            "y": 16
           },
           "id": 10,
           "options": {
@@ -1369,7 +1369,7 @@
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 31
+            "y": 24
           },
           "id": 9,
           "options": {
@@ -1506,7 +1506,7 @@
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 31
+            "y": 24
           },
           "id": 18,
           "options": {
@@ -1661,7 +1661,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 31
+            "y": 24
           },
           "id": 8,
           "options": {
@@ -1781,7 +1781,8 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -1838,7 +1839,7 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 70
+            "y": 17
           },
           "id": 13,
           "options": {
@@ -1866,7 +1867,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "avg(irate(container_cpu_user_seconds_total{container_label_io_kubernetes_container_name!=\"POD\",image!=\"\"}[5m]) * 100) by (container_label_io_kubernetes_pod_name)",
+              "expr": "avg(irate(container_cpu_user_seconds_total{container_label_io_kubernetes_pod_name!=\"\"}[5m]) * 100) by (container_label_io_kubernetes_pod_name)",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
@@ -1924,7 +1925,8 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -1961,7 +1963,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 70
+            "y": 17
           },
           "id": 14,
           "options": {
@@ -1991,7 +1993,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "sum(container_memory_usage_bytes{image!=''}) by (container_label_io_kubernetes_pod_name)",
+              "expr": "sum(container_memory_usage_bytes{container_label_io_kubernetes_pod_name!=''}) by (container_label_io_kubernetes_pod_name)",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
@@ -2050,7 +2052,8 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -2087,7 +2090,7 @@
             "h": 8,
             "w": 6,
             "x": 0,
-            "y": 78
+            "y": 25
           },
           "id": 16,
           "options": {
@@ -2117,7 +2120,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "sum(container_fs_usage_bytes{image!=\"\",device!~\"/dev/dm.*\"}) by(container_label_io_kubernetes_pod_name)",
+              "expr": "sum(container_fs_usage_bytes) by(instance)",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
@@ -2176,7 +2179,8 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -2223,7 +2227,7 @@
             "h": 8,
             "w": 6,
             "x": 6,
-            "y": 78
+            "y": 25
           },
           "id": 17,
           "options": {
@@ -2252,7 +2256,7 @@
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(irate(container_fs_writes_bytes_total{image!=\"\",device!~\"/dev/dm.*\"}[5m])) by (container_label_io_kubernetes_pod_name)",
+              "expr": "sum(irate(container_fs_writes_bytes_total{container_label_io_kubernetes_pod_name!=\"\",device!~\"/dev/dm.*\"}[5m])) by (container_label_io_kubernetes_pod_name)",
               "format": "time_series",
               "instant": false,
               "intervalFactor": 1,
@@ -2267,7 +2271,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "-1 * sum(irate(container_fs_reads_bytes_total{image!=\"\",device!~\"/dev/dm.*\"}[5m])) by (container_label_io_kubernetes_pod_name)",
+              "expr": "-1 * sum(irate(container_fs_reads_bytes_total{container_label_io_kubernetes_pod_name!=\"\",device!~\"/dev/dm.*\"}[5m])) by (container_label_io_kubernetes_pod_name)",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2330,7 +2334,8 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "green",
+                    "value": null
                   },
                   {
                     "color": "red",
@@ -2377,7 +2382,7 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 78
+            "y": 25
           },
           "id": 15,
           "options": {
@@ -2406,7 +2411,7 @@
               },
               "editorMode": "code",
               "exemplar": false,
-              "expr": "sum(irate(container_network_transmit_bytes_total{image!=\"\"}[5m])) by (container_label_io_kubernetes_pod_name)",
+              "expr": "sum(irate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name!=\"\"}[5m])) by (container_label_io_kubernetes_pod_name)",
               "format": "time_series",
               "instant": false,
               "intervalFactor": 1,
@@ -2421,7 +2426,7 @@
                 "uid": "${DS_PROMETHEUS}"
               },
               "editorMode": "code",
-              "expr": "-1 * sum(irate(container_network_receive_bytes_total{image!=\"\"}[5m])) by (container_label_io_kubernetes_pod_name)",
+              "expr": "-1 * sum(irate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name!=\"\"}[5m])) by (container_label_io_kubernetes_pod_name)",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -2475,7 +2480,7 @@
             "h": 4,
             "w": 6,
             "x": 0,
-            "y": 34
+            "y": 18
           },
           "id": 27,
           "options": {
@@ -2595,7 +2600,7 @@
             "h": 8,
             "w": 9,
             "x": 6,
-            "y": 34
+            "y": 18
           },
           "id": 29,
           "options": {
@@ -2749,7 +2754,7 @@
             "h": 8,
             "w": 9,
             "x": 15,
-            "y": 34
+            "y": 18
           },
           "id": 30,
           "options": {
@@ -2854,7 +2859,7 @@
             "h": 4,
             "w": 6,
             "x": 0,
-            "y": 38
+            "y": 22
           },
           "id": 33,
           "options": {
@@ -2964,7 +2969,7 @@
             "h": 11,
             "w": 9,
             "x": 0,
-            "y": 42
+            "y": 26
           },
           "id": 31,
           "options": {
@@ -2998,7 +3003,7 @@
               "step": 240
             }
           ],
-          "title": "Total Commands / sec",
+          "title": "Total Redis Commands / sec",
           "type": "timeseries"
         },
         {
@@ -3088,7 +3093,7 @@
             "h": 6,
             "w": 15,
             "x": 9,
-            "y": 42
+            "y": 26
           },
           "id": 34,
           "options": {
@@ -3126,7 +3131,7 @@
               "step": 240
             }
           ],
-          "title": "Average Time Spent by Command / sec",
+          "title": "Average Time Spent by Redis Command / sec",
           "type": "timeseries"
         },
         {
@@ -3195,7 +3200,7 @@
             "h": 5,
             "w": 15,
             "x": 9,
-            "y": 48
+            "y": 32
           },
           "id": 35,
           "options": {
@@ -3236,7 +3241,7 @@
               "step": 240
             }
           ],
-          "title": "Total Time Spent for a command / sec",
+          "title": "Total Time Spent for a Redis Command / sec",
           "type": "timeseries"
         }
       ],

@@ -35,7 +35,8 @@ RUN sed -i '/r := mux.NewRouter()/a\\tr.HandleFunc(baseUrl + "/v2.txt", func(w h
 
 # version v3
 RUN sed -i '/r := mux.NewRouter()/a\\tr.HandleFunc(baseUrl + "/v3.txt", func(w http.ResponseWriter, _ *http.Request) { fmt.Fprint(w, "THIS IS VERSION v3") })' main.go
-RUN sed -i '/r := mux.NewRouter()/a\\tr.Use(func(next http.Handler) http.Handler { return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { time.Sleep(3 * time.Second); next.ServeHTTP(w, r) }) })' main.go
+RUN sed -i '/import (/a\\t"strings"' main.go
+RUN sed -i '/r := mux.NewRouter()/a\\tr.Use(func(next http.Handler) http.Handler { return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { if !strings.Contains(r.URL.Path, "_healthz") { time.Sleep(3 * time.Second) }; next.ServeHTTP(w, r) }) })' main.go
 
 # Skaffold passes in debug-oriented compiler flags
 ARG SKAFFOLD_GO_GCFLAGS

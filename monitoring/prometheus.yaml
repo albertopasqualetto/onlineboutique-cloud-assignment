@@ -55,7 +55,6 @@ spec:
             - name: storage-volume
               mountPath: /data
               subPath: ""
-        # TODO really needed?
         - name: prometheus-server-configmap-reload
           image: "quay.io/prometheus-operator/prometheus-config-reloader:v0.78.2"
           imagePullPolicy: "IfNotPresent"

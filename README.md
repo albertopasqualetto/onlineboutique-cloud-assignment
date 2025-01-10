@@ -13,36 +13,11 @@
 
 2. Copy terraform.tfvars.example to terraform.tfvars and update the values
 3. `terraform init` and `terraform apply`
-4. Update conguration with `kubectl apply -k .`
+4. `istioctl manifest install --set profile=default` to install Istio
+5. `kubectl label namespace default istio-injection=enabled` to enable Istio sidecar injection
+6. Apply conguration with `kubectl apply -k .`
 
 > [!IMPORTANT]
 > Don't forget get the credentials with `gcloud container clusters get-credentials onlineboutique`
-
-## Steps
-
-### Mandatory base steps
-
-- [x] Deploying the original application in GKE
-- [x] Analyzing the provided configuration
-- [x] Deploying the load generator on a local machine
-- [x] Deploying automatically the load generator in Google Cloud
-
-### Mandatory advanced steps
-
-- [x] Monitoring the application and the infrastructure
-- [ ] Next | Performance evaluation
-- [x] Canary releases
-
-### Bonus steps
-
-- [x] Monitoring the application and the infrastructure [Bonus]
-- [ ] Next | Performance evaluation [Bonus]
-- [ ] No | Autoscaling [Bonus]
-- [ ] No | Optimizing the cost of your deployment [Bonus]
-- [ ] Next | Canary releases [Bonus]
-- [ ] No | Managing a storage backend for logging orders [Bonus]
-- [ ] No | Deploying your own Kubernetes infrastructure [Bonus]
-- [ ] Next | Review of recent publications [Bonus]
-
 
 `kubectl debug -it <POD> --image=curlimages/curl -- /bin/sh` used for debugging with curl

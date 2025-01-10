@@ -20,7 +20,7 @@ variable "machineType" {
 }
 
 variable "instanceName" {
-  default = "loadgenerator"
+  default = "performance-evaluation"
 }
 
 variable "GCPUserID" {

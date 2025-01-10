@@ -1,23 +1,21 @@
-# The Report
+# Report
+
+*Authors: Alberto Pasqualetto, Matteo Ciccone*
 
 Every command is to be run from the root of the repository.
 
 ## Deploying the original application in GKE
 
-We created the cluster from GKE dashboard, choosing the standard configuration (zone, cluster name, node count ...).
+We created the cluster from GKE dashboard, choosing the standard configuration (zone, cluster name, node count, ...).
 
 Then we cloned the repository;
  and we connected to the cluster with `gcloud container clusters get-credentials onlineboutique`
 
-`kubectl apply -f ./release/kubernetes-manifests.yaml`
+Finally we deployed the application with `kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/microservices-demo/refs/heads/main/release/kubernetes-manifests.yaml` retrieving it directly from the original repository.
 
-We verified the deployment was succesfull obtaining the ip address of the frontends load balancer with `kubectl get services frontend-external` and throw output of the load generator with `kubectl logs <LOADGENERATOR_POD_NAME>`.
+We verified the deployment was succesful obtaining the ip address of the frontend's load balancer with `kubectl get services frontend-external` and reading the output of the load generator with `kubectl logs <LOADGENERATOR_POD_NAME>`.
 
-Explain the Autopilot mode.
-
-## Analyzing the provided configuration
-
-# Autopilot
+### Autopilot mode
 
 **Autopilot** is a GKE operation mode where Google manages the cluster configuration, including:
 - Nodes
@@ -31,9 +29,7 @@ According to the [Autopilot vs Standard Feature Comparison](https://cloud.google
 
 This hides cluster configuration details from the user, addressing issues like low resource allocation often seen in GKE's standard mode.
 
----
-
-# Configuration Explanation
+## Analyzing the provided configuration
 
 The `kubernetes-manifests.yaml` file defines configurations for all Online Boutique services. For each service, it includes:
 - A **`Deployment`**
@@ -42,7 +38,7 @@ The `kubernetes-manifests.yaml` file defines configurations for all Online Bouti
 
 ### Frontend Service Example
 
-Here is an example configuration for the **frontend service**:
+Here is an the extract of the configuration regarding the **frontend service**:
 
 ```yaml
 ---
@@ -145,178 +141,226 @@ metadata:
 ---
 ```
 
----
+#### Explanation of Key Fields
 
-## Explanation of Key Fields
-
-### Common Fields
+##### Common Fields
 - **`apiVersion`**: The API version for the object.
 - **`kind`**: The type of Kubernetes object (e.g., `Deployment`, `Service`, `ServiceAccount`).
-- **`metadata`**: Contains the object's name and labels.
+- **`metadata`**: Contains the object's name and labels; in this piece of manifest all objects have "frontend" name except one service with "frontend-external" name and all objects have "app: frontend" label.
 
----
-
-### Deployment Specification
+##### Deployment Specification (`spec`)
 - **`selector.matchLabels.app: frontend`**: Matches pods managed by this deployment.
 - **`template`**:
-  - **`metadata.labels.app: frontend`**: Labels the pods for this deployment.
-  - **`annotations.sidecar.istio.io/rewriteAppHTTPProbers: "true"`**: Ensures Istio rewrites readiness and liveness probes.
-  - **`spec.serviceAccountName: frontend`**: Associates the deployment with the `frontend` ServiceAccount.
-  - **`securityContext`**: Configures security settings for the pod:
-    - **`fsGroup`, `runAsGroup`, `runAsUser`**: Ensures non-root execution with specific user/group IDs.
-    - **`runAsNonRoot: true`**: Enforces that the container runs as a non-root user.
-  - **`containers`**:
-    - **`securityContext`**: Hardens container security:
-      - **`allowPrivilegeEscalation: false`**: Prevents privilege escalation.
-      - **`capabilities.drop: [ALL]`**: Drops all POSIX capabilities.
-      - **`privileged: false`**: Runs the container in a non-privileged mode.
-      - **`readOnlyRootFilesystem: true`**: Makes the filesystem read-only.
-    - **`image`**: Specifies the container image to use.
-    - **`ports.containerPort: 8080`**: Exposes port 8080 inside the pod.
-    - **`readinessProbe`**: Configures readiness checks:
-      - HTTP GET request to `/_healthz` on port 8080.
+  - **`metadata`**:
+    - **`labels.app: frontend`**: Labels the pods for this deployment, it is the name of the app.
+    - **`annotations.sidecar.istio.io/rewriteAppHTTPProbers: "true"`**: Ensures a possible Istio instance (a sidecar software which provides observability, traffic management and security) to rewrite readiness and liveness probes to be redirected through it.
+  - **`spec`**:
+    - **`serviceAccountName: frontend`**: Associates the deployment with the `frontend` ServiceAccount.
+    - **`securityContext`**: Configures security settings for the pod:
+      - **`fsGroup`, `runAsGroup`, `runAsUser`**: Ensures non-root execution with specific user/group IDs.
+      - **`runAsNonRoot: true`**: Enforces that the container runs as a non-root user.
+    - **`containers`**: Defines the list of containers in the pod, "`server`" is the only one in this case.
+      - **`securityContext`**: Hardens container security:
+        - **`allowPrivilegeEscalation: false`**: Prevents privilege escalation.
+        - **`capabilities.drop: [ALL]`**: Drops all POSIX [capabilities](https://man.archlinux.org/man/capabilities.7) (related to a fine-grained "superuser" permissions system).
+        - **`privileged: false`**: Runs the container in a non-privileged mode.
+        - **`readOnlyRootFilesystem: true`**: Makes the filesystem read-only (container is stateless).
+      - **`image`**: Specifies the container image to use.
+      - **`ports.containerPort: 8080`**: Exposes port 8080 inside the pod.
+    - **`readinessProbe`**: Configures readiness checks, used to indicate when the pod is ready to serve traffic, the container will not receive requests while it is not ready.:
+      - HTTP GET request (`httpGet`) to `/_healthz` (`path`) on port 8080 (`port`) with header `Cookie: shop_session-id=x-readiness-probe`.
     - **`livenessProbe`**: Configures liveness checks:
-      - Similar to readiness checks but for container health.
+      - Similar to readiness checks but checks if the container is alive, otherwise it is restarted.
+    - **`env`**: Defines environment variables for the container.
     - **`resources`**: Defines resource requests and limits:
       - CPU: `100m` (min), `200m` (max).
       - Memory: `64Mi` (min), `128Mi` (max).
 
----
-
-### Service Specifications
-1. **Frontend Service (`ClusterIP`)**:
+##### Service Specifications (`spec`)
+- **Frontend Service (`ClusterIP`)**:
    - **`type: ClusterIP`**: Exposes the service within the cluster.
-   - **`selector.app: frontend`**: Routes traffic to pods with matching labels.
-   - **`ports`**: Maps external port 80 to internal port 8080.
+   - **`selector.app: frontend`**: Routes traffic to pods with matching labels; in this case the previously defined deployment.
+   - **`ports`**: Maps external port 80 to internal port 8080 with the name "http".
 
-2. **Frontend External Service (`LoadBalancer`)**:
-   - **`type: LoadBalancer`**: Exposes the service externally with a public IP.
-   - **`selector.app: frontend`**: Routes traffic to pods with matching labels.
-   - **`ports`**: Maps external port 80 to internal port 8080.
+- **Frontend External Service (`LoadBalancer`)**:
+   - **`type: LoadBalancer`**: Exposes the service externally with a public IP through a requested load balancer (GCP provides one automatically).
+   - **`selector.app: frontend`**: Routes traffic to pods with matching labels; in this case the previously defined deployment.
+   - **`ports`**: Maps external port 80 to internal port 8080 with the name "http".
 
----
-
-### ServiceAccount
-- A **`ServiceAccount`** represents a non-human Kubernetes user, providing a distinct identity for interactions.
+##### ServiceAccount
+A **`ServiceAccount`** represents a non-human Kubernetes user, providing a distinct identity for interactions, here it has no `spec` definition.
 
 ## Deploying the load generator on a local machine
 
-We used the image of the load generator provided by the original repository (`us-central1-docker.pkg.dev/google-samples/microservices-demo/loadgenerator:v0.10.2`) and we ran it with the command `docker run -e FRONTEND_ADDR=<ADDRESS> -e USERS=10 <IMAGE ID>` and we analyzed the output and we understood it was accesible outside.
+We used the image of the load generator provided by the original repository (`us-central1-docker.pkg.dev/google-samples/microservices-demo/loadgenerator:v0.10.2`) and we ran it with the command `docker run -e FRONTEND_ADDR=<ADDRESS> -e USERS=10 <IMAGE ID>`, finally we analyzed the output recognising its correctness.
 
-## Deploying automatically the load generator in Google Cloud
+## Deploying Automatically the Load Generator in Google Cloud
 
-- We took from "Running MPI applications" the Terraform-related files (`simple_deployment.tf`, `variables.tf`, `parse-tf-state.py`, `setup.sh`) and we modified them to run an image with docker engine installed (`boot_disk.initialize_params.image="cos-cloud/cos-117-lts"`) within our GCP project and then we ran with `terraform -chdir=auto-deploy-loadgenerator init`.
-- To run it, `GCPUserID` and `GCPPrivateSSHKeyFile` variables are needed (set in `terraform.tfvars`).
-- Everything is setup by Terraform (hosts inventory file also)
-- `terraform -chdir="auto-deploy-loadgenerator" plan -var-file="../terraform.tfvars"`
-- `terraform -chdir="auto-deploy-loadgenerator" apply -var-file="../terraform.tfvars"`
+### Step 1: Infrastructure Provisioning Using Terraform
 
-- We created the Ansible playbook `run_docker_image.yml` to run the Locust loadgenerator.
-- `ansible-playbook -i ./auto-deploy-loadgenerator/hosts ./auto-deploy-loadgenerator/run_docker_image.yml --extra-vars "frontend_external_ip=$(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"`
-  - `hosts` file is generated by Terraform using the "local_file" resource.
-- Ansible does not work from Windows so we used wsl to use it in a linux enviroment.
+First of all we collected boilerplate files from "[Running MPI applications](https://roparst.gricad-pages.univ-grenoble-alpes.fr/cloud-tutorials/mpi/)", including:
 
-# Monitoring the application and the infrastructure
+   - `simple_deployment.tf`
+   - `variables.tf`
+   - `parse-tf-state.py`
+   - `setup.sh`
 
-## Mandatory part
+Then we simplified them delegating all the work to Terraform in `auto-deploy-loadgenerator/deployment.tf` and `auto-deploy-loadgenerator/variables.tf`:
 
-# Monitoring the Application and the Infrastructure
+- We are using an image with Docker Engine installed (`cos-cloud/cos-117-lts`).
+- We prepare the inventory file for Ansible with a `local_file` resource:
 
-Monitoring the application and its supporting infrastructure is essential for understanding system behavior, identifying bottlenecks, and detecting potential issues before they impact the end users. The following outlines the steps and tools utilized for implementing monitoring in this project.
+  ```hcl
+  resource "local_file" "hosts" {
+      content = <<EOF
+  %{ for i in range(var.machineCount) }
+  ${google_compute_instance.vm_instance[i].network_interface.0.access_config.0.nat_ip}
+  %{ endfor }
 
-## Implementation Overview
+  [all:vars]
+  ansible_ssh_user=${var.GCPUserID}
+  ansible_ssh_private_key_file='${var.GCPPrivateSSHKeyFile}'
+  ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+  EOF
+      filename = "hosts"
+  }
+  ```
 
-### Directory Structure
-All related files and configurations are organized in the **`monitoring`** folder for ease of access and maintenance.
+- `GCPUserID` and `GCPPrivateSSHKeyFile` are defined in `terraform.tfvars` of the root directory.
 
-### Deployment Approach
-- **Kustomize** was used to manage Kubernetes manifests without relying on Helm, aligning with the project's requirements for simplicity and flexibility.
+Finally we runned Terraform:
 
-### Prometheus Setup
+```bash
+terraform -chdir=auto-deploy-loadgenerator init # Initialize Terraform
+terraform -chdir="auto-deploy-loadgenerator" plan -var-file="../terraform.tfvars" # Plan Deployment
+terraform -chdir="auto-deploy-loadgenerator" apply -var-file="../terraform.tfvars"  # Apply Deployment
+```
+
+`-var-file` is used to pass the variables from root folder to the Terraform configuration and do not duplicate the configuration.
+
+From this point on, also the GKE cluster was created with Terraform in a similar way that can be seen in the `deployment.tf` file.
+
+### Step 2: Automating Deployment with Ansible
+
+We created a playbook named `run_docker_image.yml` to automate the deployment and execution of the Locust load generator docker image, it is really simple and uses the `docker_container` Ansible module (in a previous iteration we also built the Dockerfile, but it was not necessary).
+
+Then using the `hosts` file generated by Terraform we runned the playbook: `ansible-playbook -i ./auto-deploy-loadgenerator/hosts ./auto-deploy-loadgenerator/run_docker_image.yml
+       --extra-vars "frontend_external_ip=$(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"`
+
+> **Note**: Ansible does not work directly on Windows. To address this, WSL (Windows Subsystem for Linux) was used to run Ansible in a Linux environment.
+
+
+## Monitoring the application and the infrastructure
+
+Monitoring the application and its supporting infrastructure is crucial for understanding system behavior, identifying bottlenecks, and detecting potential issues before they impact the end users. The following outlines the steps and tools utilized for implementing monitoring in this project, everything related to this part is in the `monitoring` folder.
+
+This objective drove the usage of **[Kustomize](https://kustomize.io/)** to manage Kubernetes manifests without relying on Helm to keep everything as transparent as possible so in order to deploy the monitoring infrastructure, ensure to uncomment the monitoring section in the root `kustomization.yaml` file and then run `kubectl apply -k .`. Specific deployment details are in the `kustomization.yaml` file in the monitoring folder.
+
+`configMapGenerator` in the `kustomization.yaml` is used to generate all the necessary configurations/files for Prometheus and Grafana ensuring also a fast and easy deployment since at every change in the configuration the deployment is updated after an apply. Without this feature, the deployment tests would have been more complex since it would have required to manually update the ConfigMap or to delete and recreate the deployment every time because Kubernetes resources are immutable.
+
+### Mandatory part
+
+#### Prometheus
 Prometheus was employed as the primary tool for collecting and aggregating metrics. Below are the specific configurations and components used:
 
-#### 1. **ClusterRole**
-A **ClusterRole** was configured to grant Prometheus access to metrics from all pods within the cluster. This setup posed initial challenges due to the lack of clear documentation, but the issue was resolved by thorough exploration and experimentation.
+- **[Prometheus](https://prometheus.io/)**: The core monitoring tool for collecting metrics. It is responsible for scraping metrics from various exporters and services. Deployed from the `prometheus.yaml` file.
+- **ClusterRole**
+  A **ClusterRole** was configured to grant Prometheus access to metrics from all pods within the cluster. This setup posed initial challenges due to the lack of clear documentation, but the issue was resolved by thorough exploration and experimentation.
+- **Exporters**
+  Exporters were deployed with `prometheus-infrastructure-metrics.yaml` file to collect resource consumption metrics at both the node and pod levels:
+  - **[Node Exporter](https://github.com/prometheus/node_exporter)**:
+    - Collects statistics at the **node level**, such as CPU usage, memory consumption, and disk I/O.
+    - Deployed as a **DaemonSet**, ensuring that one instance runs on every node in the cluster.
+  - **[cAdvisor](https://github.com/google/cadvisor)**:
+    - Collects statistics at the **pod level**, including CPU, memory, and container-specific metrics.
+    - Also deployed as a **DaemonSet** for consistent monitoring across all nodes in the cluster.
+-**Prometheus Configuration**
+  The **`prometheus-config.yml`** file defines scraping jobs for collecting metrics. This includes configurations for node-exporter and cAdvisor endpoints to ensure seamless integration.
+  Ir scrapes both metrics from static targets (like `productcatalogservice.default.svc.cluster.local:9090`) and also defines some scrape jobs for the exporters which have the annotation `prometheus.io/scrape: 'true'`.
 
-#### 2. **Exporters**
-Exporters were deployed to collect resource consumption metrics at both the node and pod levels:
+#### Grafana Integration
 
-- **Node Exporter**:
-  - Collects statistics at the **node level**, such as CPU usage, memory consumption, and disk I/O.
-  - Deployed as a **DaemonSet**, ensuring that one instance runs on every node in the cluster.
-  - **DaemonSet Explanation**: A Kubernetes controller that automatically ensures a pod runs on all or specific nodes, making it ideal for node-level monitoring.
+To visualize the metrics collected by Prometheus Grafana has been deployed (`grafana.yaml` file) with a predefined dashboard.
 
-- **cAdvisor**:
-  - Collects statistics at the **pod level**, including CPU, memory, and container-specific metrics.
-  - Also deployed as a **DaemonSet** for consistent monitoring across all nodes in the cluster.
-  - **DaemonSet Explanation**: Similar to the node exporter setup, cAdvisor leverages the DaemonSet controller to provide comprehensive coverage of all pods running in the cluster.
+##### Provisioning and Configuration
 
-#### 3. **Prometheus Configuration**
-The **`prometheus-config.yml`** file was created to define scraping jobs for collecting metrics. This includes configurations for node-exporter and cAdvisor endpoints to ensure seamless integration.
+Datasources, and dashboards were provisioned adding the files as ConfigMaps and mounting them in the Grafana deployment.
 
-### Grafana Integration
-To visualize the metrics collected by Prometheus:
-- Grafana dashboards were configured to display:
-  - **Node-level metrics**, such as CPU and memory utilization.
-  - **Pod-level metrics**, including resource usage per container.
-- Predefined dashboards were included in the monitoring setup to provide instant insights.
+> **Note**: Datasources are used to define the connection to the Prometheus server, while dashboards are used to define the layout and visualization of the metrics, dashboards also need a provider file to be provisioned.
 
----
+Here the detail of the Deployment resource:
 
-- Grafana
-  - provisioned from file
-    - /etc/grafana/provisioning/datasources <- grafana-datasources configmap 
-      - configMapGenerator (!!) in kustomization.yaml
-  - OBA Dashboard
-    - show main metrics (cite them)
-    - put some screenshots
-    - took inspiration from:
-      - 1860 node-exporter
-      - 13946 cAdvisor
-      - 763 redis
-    - some **PromQL** queries does not work with all ranges
-    - colors etc
-  - admin:admin
+```yaml
+containers:
+  - name: grafana
+    [...]
+    volumeMounts:
+      - mountPath: /etc/grafana/provisioning/datasources
+        name: grafana-datasources
+      - mountPath: /etc/grafana/provisioning/dashboards
+        name: grafana-dashboards
+      - mountPath: /etc/grafana/provisioning/alerting
+        name: grafana-alerting
+[...]
+volumes:
+  - name: grafana-datasources
+    configMap:
+      name: grafana-datasources
+  - name: grafana-dashboards
+    configMap:
+      name: grafana-dashboards
+  - name: grafana-alerting
+    configMap:
+      name: grafana-alerting
+```
 
-# Bonus: Advanced Monitoring and Alerts
+And here the relative configMapGenerator:
 
-## Collecting More Specific Metrics
+```yaml
+configMapGenerator:
+- name: grafana-datasources
+  namespace: monitoring
+  files:
+  - grafana-prometheus-datasource.yml
+- name: grafana-dashboards
+  namespace: monitoring
+  files:
+  - grafana-dashboard-provider.yml
+  - grafana-dashboard.json
+```
+
+Default credentials for Grafana are `admin:admin`.
+
+### Bonus part
+
+#### Collecting More Specific Metrics
 
 Beyond general resource consumption metrics, we implemented additional monitoring capabilities to collect more specific metrics for certain components. Below are the enhancements:
 
-### Redis Metrics
+##### Redis Metrics
 - **Purpose**: Redis is used for the cart functionality in the application.
 - **Exporter**: We used the `oliver006/redis_exporter` to collect Redis-specific metrics.
 - **Integration**:
-  - The exporter was added to the cart pod using a Kubernetes patch file: `redis-exporter.patch.yaml`.
-- **Visualization**: A Grafana dashboard was configured to display Redis metrics (e.g., latency, command execution rates).
-- **Evidence**: Screenshot of the dashboard (included in the report).
+  - The exporter was added to the cart pod using a patch applied by Kustomize: `redis-exporter.patch.yaml`.
+- **Visualization**: Some Grafana visualizations were configured to display Redis metrics (e.g., latency, command execution rates).
+  For example the query to get current number of carts is simply `redis_db_keys{db="db0"}`.
 
----
-
-### gRPC Metrics
+##### gRPC Metrics
 - **Goal**: Monitor gRPC metrics for services, using the `checkoutservice` as an example.
-- **Challenges**:
-  - Attempted to use OpenTelemetry (otel) but faced limitations due to its incomplete integration with the existing codebase.
+- **Challenge**:
   - Required building familiarity with Golang as we were new to the language.
 - **Implementation**:
-  - Metrics for the gRPC server in the `checkoutservice` were extracted using the `github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus` library.
+  - Metrics for the gRPC server in the `checkoutservice` were extracted using the `github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus` library. The library can also handle client-side metrics.
   - Added patches to the Kubernetes manifests for integration.
-  - Built a new image: `albertopasqualetto/checkoutservice:monitoring`.
-  - Configured to expose metrics using the `promhttp` package from `github.com/prometheus/client_golang/prometheus/promhttp`.
-- **Metrics Example**:
-  - Client-side metrics were also made available but not implemented fully.
-  - Example: Tracked the number of "Placed Orders."
-- **Visualization**: A Grafana dashboard visualizes gRPC metrics (e.g., request counts and latency).
-- **Evidence**: Screenshot of the dashboard (included in the report).
+  - Built a new image: `albertopasqualetto/checkoutservice:monitoring` configured to expose metrics using the `promhttp` package from `github.com/prometheus/client_golang/prometheus/promhttp` (everything can be found in the `productcatalogservice` folder).
+- **Metrics Usage Example**:
+  Tracked the number of "Placed Orders" using the PromQL query `sum(grpc_server_handled_total{instance=~"checkoutservice.*",grpc_method="PlaceOrder",grpc_code="OK"})`.
 
----
-
-### Custom Exporter
-- **Purpose**: Create a custom metric for the `productcatalogservice` to track product retrievals.
+##### Custom Exporter
+- **Purpose**: Creating custom metrics permit to track specific application behaviors, here an example of a counter metric is implemented for the `productcatalogservice` to track product retrievals.
 - **Implementation**:
-  - Developed using Golang libraries.
-  - Integrated using Kubernetes patches (similar to gRPC metrics).
+  - Developed using Golang libraries which simplify the process providing a high-level API.
+  - Integrated using Kubernetes patches.
   - Built a new image: `albertopasqualetto/productcatalogservice:monitoring`.
   - Used the `github.com/prometheus/client_golang/promauto` library to define a custom counter metric:
     ```go
@@ -327,54 +371,105 @@ Beyond general resource consumption metrics, we implemented additional monitorin
       },
       []string{"product_id", "product_name"},
     )
-
     [...]
-
     productRetrievalCounter.WithLabelValues(found.Id, found.Name).Inc()
     ```
-  - Exposed metrics using the `promhttp` package.
+  - Exposed metrics using the `github.com/prometheus/client_golang/prometheus/promhttp` package.
+- **Metrics Usage Example**:
+  The custom metric can be queried using the PromQL query `sort_desc(sum(product_retrieval_count{job="productcatalogservice"}) by(product_id, product_name))` to provide a nice table with the most retrieved products.
 
-- **Visualization**: Grafana dashboard displays metrics for product retrievals.
+In the procedure of collecting more specific metrics, we encountered some predisposition for tracing and metrics exporters in the original microservices like described in [Google Cloud Operations Integration page](https://github.com/GoogleCloudPlatform/microservices-demo/tree/main/kustomize/components/google-cloud-operations), actually only the shipping service integrates a OpenTelemetry exporter, but in the end it was only a mock-up. For this reason we decided to ignore this information.
 
----
+#### Raising Alerts
 
-## Raising Alerts
-
-### Alerting Configuration
-- Alerts were provisioned directly in Grafana. Future updates may involve switching to Prometheus-based alerting for better alignment with the task description.
+##### Alerting Configuration
+- Alerts were provisioned directly in Grafana.
+- Also Prometheus can deliver alerts, but we decided to use Grafana to keep everything in one place and leave Prometheus only for metrics collection.
 - Example Alerts:
-  - Resource usage thresholds (e.g., high CPU or memory usage).
-  - Application-specific metrics (e.g., Redis latency exceeding limits, gRPC failures).
-  - Placeholder alerts fired at startup due to the absence of data.
-
-### Notification System
+  - High CPU Node Load
+  - Disk Space Running Out
+  - Inactive Pods
 - Alerts were configured to send notifications to a **Telegram bot** and channel for real-time updates.
   - [Telegram Bot](https://t.me/oba_grafana_alerts_bot)
   - [Telegram Channel](https://t.me/+GpjvzfmIGZM4NTk0)
+- Non-meaningful alerts always fire at startup due to the absence of data.
 
----
+### **Dashboard**:
+Here are some screenshots of the Grafana dashboard showcasing the collected metrics:
+- **General Stats**:
+  ![General Stats](images/grafana-general-stats.png)
+- **Shop Stats**:
+  ![Shop Stats](images/grafana-shop-stats.png)
+- **Node Stats**:
+  ![Node Stats](images/grafana-node-stats.png)
+- **Pod Stats**:
+  ![Pod Stats](images/grafana-pod-stats.png)
+- **Redis Cart**:
+  ![Redis Cart](images/grafana-redis-cart.png)
 
-This extended monitoring and alerting setup enhances visibility into the application's behavior and enables proactive management of potential issues.
+*Color schemes and visualizations were customized to enhance clarity.*
 
-## Performance evaluation
-# TODO
-- We used Locust to generate traffic.
-- Everytime also another already deployed load generator was present (the default one) with 10 users.
-- It have been monitored by the csv output.
-- Different tests have been done: 1vm f1-micro, 3vm f1-micro, 3vm f1-micro + local_pc.
-- VMs spawned using Terraform in a similar fashion as in the previous section regarding the automatic deployment of the load generator.
-  - Now using `boot_disk.initialize_params.image="debian-cloud/debian-12"` since Docker was not needed, but a package manager was.
-- Everytime the `spawn_rate` has been set to 10% of the users.
-- Different user quantities have been tested: 10, 100, 1000.
-- Always 3 minutes of run time.
-- Command: `locust -f locustfile.py --headless --host http://<FRONTEND_ADDR> --users <USERS> --spawn-rate <SPAWN_RATE> --csv <CSV_NAME> --run-time <RUN_TIME>`
-- Two approaches for distributed load generation have been tested because the first time the results were very bad, so we tried a different approach to see if it was the problem.
-- For 3vm f1-micro the same command was used trough the Ansible playbook `run_locust_retireve_csv.yml` with the command `ansible-playbook -i ./performance-evaluation/hosts ./performance-evaluation/setup_locust.yml --extra-vars "frontend_external_ip=$(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}') users=<USERS> spawn_rate=<SPAWN_RATE> csv_name=<CSV_NAME>"` which installs Locust, runs it and retrieves the csv files.
-- For 3vm f1-micro + local_pc [locust-swarm](https://github.com/SvenskaSpel/locust-swarm) library was used to run the tests in parallel with a similar command: `swarm -f microservices-demo/src/loadgenerator/locustfile.py --loadgen-list <LOADGEN_LIST> --host http://<FRONTEND_ADDR> --run-time <RUN_TIME> --users <USERS> --spawn-rate <SPAWN_RATE> --csv <CSV_NAME>`
-  - Where `LOADGEN_LIST` is a comma-separated list of the ip addresses of the deployed VMs.
-  - This is actually a real distributed load generation because it uses the locust master-slave architecture, the previous approach just managed manually multiple locust instances.
-- The results have been analyzed with the `analysis.py` script to generate a plot.
-![Performance evaluation plot](./performance-evaluation/plot.png)
+*The dashboard was inspired by existing templates and tailored to the specific requirements of the Online Boutique application. Such as the [Node Exporter](https://grafana.com/grafana/dashboards/1860), [cAdvisor](https://grafana.com/grafana/dashboards/13946), and [Redis](https://grafana.com/grafana/dashboards/763) dashboards.*
+
+## Performance Evaluation
+
+#### Overview
+
+Performance evaluation was conducted using **Locust** to generate traffic and monitor application behavior under different load conditions.
+
+#### Methodology
+
+1. **Load Generators**:
+   - The default load generator deployed with the application (10 users) was active during all tests.
+   - Additional load generators were deployed for scaling experiments.
+
+2. **Test Configurations**:
+   - **Infrastructure**:
+     - Single VM (`f1-micro`)
+     - Three VMs (`f1-micro`)
+     - Three VMs (`f1-micro`) + local PC
+   - **VM Configuration**:
+     - Used `boot_disk.initialize_params.image="debian-cloud/debian-12"` since Docker was not needed.
+   - **Traffic Patterns**:
+     - User quantities: 10, 100, 1000
+     - `spawn_rate`: Set to 10% of total users
+     - Duration: 3 minutes
+
+3. **Command**:
+   - Locust was executed with the following parameters:
+     ```bash
+     locust -f locustfile.py --headless --host http://<FRONTEND_ADDR> --users <USERS> \
+       --spawn-rate <SPAWN_RATE> --csv <CSV_NAME> --run-time <RUN_TIME>
+     ```
+
+4. **Distributed Load Testing**:
+   - **First Approach**:
+     - Used Ansible to deploy and manage Locust instances on three VMs.
+     - Command:
+       ```bash
+       ansible-playbook -i ./performance-evaluation/hosts ./performance-evaluation/setup_locust.yml \
+         --extra-vars "frontend_external_ip=$(kubectl get svc istio-ingressgateway -n istio-system -o jsonpath='{.status.loadBalancer.ingress[0].ip}') \
+         users=<USERS> spawn_rate=<SPAWN_RATE> csv_name=<CSV_NAME>"
+       ```
+   - **Second Approach**:
+     - Used [locust-swarm](https://github.com/SvenskaSpel/locust-swarm) for distributed load testing.
+     - Command:
+       ```bash
+       swarm -f microservices-demo/src/loadgenerator/locustfile.py --loadgen-list <LOADGEN_LIST> \
+         --host http://<FRONTEND_ADDR> --run-time <RUN_TIME> --users <USERS> --spawn-rate <SPAWN_RATE> --csv <CSV_NAME>
+       ```
+       - `LOADGEN_LIST`: Comma-separated list of IP addresses for deployed VMs.
+       - This method utilized the Locust master-slave architecture for true distributed load testing.
+
+#### Results Analysis
+
+1. **CSV Outputs**:
+   - The results were monitored and collected via Locust's CSV output files.
+
+2. **Visualization**:
+   - Analyzed using a custom script (`analysis.py`) to generate performance plots.
+     - Example Plot:
+       ![Performance Evaluation Plot](./performance-evaluation/plot.png)
 
 ## Canary Release
 
@@ -589,7 +684,7 @@ This setup ensures smooth and controlled canary releases while providing real-ti
         - "*"
     analysis:
       interval: 1m
-      threshold: 5
+      threshold: 10
       maxWeight: 50
       stepWeight: 10
       metrics:
@@ -599,3 +694,51 @@ This setup ensures smooth and controlled canary releases while providing real-ti
           threshold: 500
   ```
 
+## Bonus part: Automated Rollback of Canary Release
+
+Using the Flagger Canary configuration described above, in particular the `analysis` section, Flagger automatically detects issues based on the defined metrics thresholds. When an issue is detected, Flagger initiates an automated rollback to the previous version.
+
+### Rollback Process
+
+In order to simulate a rollback, we introduced a 3s latency for all the requests in the `v3` version of the `frontend` service except for the `_healthz` endpoint used to check the service's health and liveness by Kubernetes, otherwise the service wouldn't start correctly.
+
+The relevant added line:
+```go
+r.Use(func(next http.Handler) http.Handler {
+  return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    time.Sleep(3 * time.Second)
+    next.ServeHTTP(w, r)
+  })
+})
+```
+```
+
+The actual implementation can be seen in the `canary-version/frontend-v3.Dockerfile` file.
+
+To perform rollback some metrics thresholds need to be present in the *Canary* resource configuration, this is the relvant part:
+
+```yaml
+    analysis:
+      interval: 1m
+      threshold: 10
+      metrics:
+        - name: request-duration
+          threshold: 500
+```
+
+It says that when the request duration exceeds 500ms (in the v3 version it happens) for 10 times (probes are requested every 1 minute), the rollback is triggered.
+
+The trigger of canary deployment is as before with the command `kubectl set image deployment/frontend server=albertopasqualetto/oba-frontend:v3`.
+
+This is an output of the `kubectl describe canary/frontend` command:
+
+```
+  Normal   Synced  13m                   flagger  New revision detected! Scaling up frontend.default
+  Normal   Synced  12m                   flagger  Starting canary analysis for frontend.default
+  Normal   Synced  12m                   flagger  Advance frontend.default canary weight 10
+  Warning  Synced  2m52s (x10 over 11m)  flagger  Halt frontend.default advancement request duration 4.975s > 500ms
+  Warning  Synced  112s                  flagger  Rolling back frontend.default failed checks threshold reached 10
+  Warning  Synced  112s                  flagger  Canary failed! Scaling down frontend.default
+```
+
+From the output it can be seen that the deployment was rolled back because the request duration exceeded the threshold for 10 minutes.
