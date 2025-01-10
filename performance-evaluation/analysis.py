@@ -2,8 +2,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-# Function to process files
-def plot_response_times_from_folder(folder_path):
+# Function to process files and plot response times and failure percentages
+def plot_metrics_from_folder(folder_path):
     all_data = []
 
     # Scroll through all files in the folder
@@ -30,38 +30,55 @@ def plot_response_times_from_folder(folder_path):
                 if not aggregated.empty:
                     avg_response_time = aggregated["Average Response Time"].values[0]
                     max_response_time = aggregated["Max Response Time"].values[0]
+                    request_count = aggregated["Request Count"].values[0]
+                    failure_count = aggregated["Failure Count"].values[0]
+
+                    # Calculate failure percentage
+                    failure_percentage = (failure_count / request_count) * 100 if request_count > 0 else 0
 
                     # Append data to the list
                     all_data.append({
                         "n": n,
                         "users": users,
                         "Average Response Time": avg_response_time,
-                        "Max Response Time": max_response_time
+                        "Max Response Time": max_response_time,
+                        "Failure Percentage": failure_percentage
                     })
 
     if not all_data:
-        print("Errore: Nessun dato trovato nella cartella.")
+        print("Error: No data found in the folder.")
         return
 
-    print(all_data)
+    # Create a DataFrame from collected data
     data_df = pd.DataFrame(all_data)
-    print(data_df)
 
     # Sort data for plotting
     data_df.sort_values(by=["users", "n"], ascending=[True, True], inplace=True)
 
     # Plot the data
-    plt.figure(figsize=(12, 8))
-    plt.plot(range(len(data_df)), data_df["Average Response Time"], marker='o', label="Average Response Time")
-    plt.plot(range(len(data_df)), data_df["Max Response Time"], marker='o', label="Max Response Time")
-    plt.xticks(range(len(data_df)), [f"{row['n']}vm-{row['users']}usr" for _, row in data_df.iterrows()], rotation=45)
-    plt.title("Response Times Across Multiple Configuration")
-    plt.ylabel("Response Time (ms)")
-    plt.xlabel("Configuration (#vm-#users)")
-    plt.legend()
+    fig, ax1 = plt.subplots(figsize=(12, 8))
+
+    # Plot response times on the primary y-axis
+    ax1.plot(range(len(data_df)), data_df["Average Response Time"], marker='o', label="Average Response Time", color='blue')
+    ax1.plot(range(len(data_df)), data_df["Max Response Time"], marker='o', label="Max Response Time", color='green')
+    ax1.set_ylabel("Response Time (ms)")
+    ax1.set_xlabel("Configuration (#vm-#users)")
+    ax1.set_xticks(range(len(data_df)))
+    ax1.set_xticklabels([f"{row['n']}vm-{row['users']}usr" for _, row in data_df.iterrows()], rotation=45)
+    ax1.legend(loc="upper left")
+    ax1.grid(True)
+
+    # Add a secondary y-axis for failure percentage
+    ax2 = ax1.twinx()
+    ax2.plot(range(len(data_df)), data_df["Failure Percentage"], marker='o', label="Failure Percentage", color='red')
+    ax2.set_ylabel("Failure Percentage (%)", color='red')
+    ax2.tick_params(axis='y', labelcolor='red')
+    ax2.legend(loc="upper right", fontsize=10, frameon=False)
+
+    plt.title("Response Times and Failure Percentage Across Configurations")
     plt.tight_layout()
     plt.show()
 
 # Specify the folder path
 folder_path = "./performance-evaluation/results"
-plot_response_times_from_folder(folder_path)
+plot_metrics_from_folder(folder_path)
