@@ -784,6 +784,10 @@ Waiting for frontend-primary.default rollout to finish: 1 of 2 updated replicas 
 Promotion completed! Scaling down frontend.default
 ```
 
+Here is a screenshot which show the canary deployment in progress has been successfully completed without any disruption from the point of view of the load generator:
+
+![Flagger Canary Release Without Disruption](./images/locust-flagger-canary-released-without-disruption.png)
+
 A useful dashboard visualization is Kiali, which provides a graphical representation of the service mesh and traffic flow:
 
 ```bash
