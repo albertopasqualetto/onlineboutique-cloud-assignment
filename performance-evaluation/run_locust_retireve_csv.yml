@@ -37,7 +37,7 @@
 
     - name: Wait for Locust to finish
       wait_for:
-        path: /tmp/locust_finished2
+        path: /tmp/locust_finished
         state: present
         timeout: 600
 
@@ -46,20 +46,14 @@
         for file in ~/{{ csv_name }}*.csv; do
           mv "$file" "${file%.csv}_$(hostname).csv"
         done
+      become_user: "{{ GCP_user_ID }}"
 
 
     - name: Find all CSV files
       shell: cd ~ && find . -maxdepth 1 -name "{{ csv_name }}*.csv" -type f | cut -d'/' -f2
       register: csv_files
       ignore_errors: yes
-      become_user: "alberto_pasqualetto01_gmail_com"
-
-    - name: Remove CSV files from remote
-      file:
-      path: ~/{{ item }}
-      state: absent
-      with_items: "{{ csv_files.stdout_lines }}"
-      become_user: "alberto_pasqualetto01_gmail_com"
+      become_user: "{{ GCP_user_ID }}"
 
     - name: Retrieve CSV files
       fetch:
@@ -67,5 +61,11 @@
         dest: ./results/
         flat: yes
       with_items: "{{ csv_files.stdout_lines }}"
-      become_user: "alberto_pasqualetto01_gmail_com"
+      become_user: "{{ GCP_user_ID }}"
 
+    - name: Remove CSV files from remote
+      file:
+        path: ~/{{ item }}
+        state: absent
+      with_items: "{{ csv_files.stdout_lines }}"
+      become_user: "{{ GCP_user_ID }}"

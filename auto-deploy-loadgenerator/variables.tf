@@ -21,7 +21,7 @@ variable "machineType" {
 }
 
 variable "instanceName" {
-  default = "loadgenerator"
+  default = "auto-deploy-loadgenerator"
 }
 
 variable "GCPUserID" {
